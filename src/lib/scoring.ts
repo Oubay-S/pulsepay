@@ -66,7 +66,7 @@ export function calculatePriorityScore(
   // Construct readable explainable reason
   const reasons: string[] = [];
   reasons.push(`${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue`);
-  reasons.push(`$${Number(invoice.amount).toLocaleString()} invoice value`);
+  reasons.push(`$${Number(invoice.amount).toLocaleString('en-US')} invoice value`);
   if (client) {
     if (client.on_time_rate >= 80) {
       reasons.push(`reliable client (${client.on_time_rate}% on-time rate)`);
