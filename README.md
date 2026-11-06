@@ -1,5 +1,7 @@
 # PulsePay — AI-Powered Receivables & Invoicing Assistant
-> **PayPal AI Hackathon 2026** · Tech Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS, Supabase, PayPal Agent Toolkit & Invoicing v2.
+> **PayPal AI Hackathon 2026** · Tech Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS, Supabase, PayPal Agent Toolkit & Invoicing v2.  
+> **Live Production URL**: [https://pulsepay-rho.vercel.app](https://pulsepay-rho.vercel.app)  
+> **Team Status & Handoff Guide**: See [docs/CURRENT_STATUS.md](./docs/CURRENT_STATUS.md)
 
 PulsePay is an autonomous, polite AI assistant designed for freelancers and small businesses that:
 1. Identifies and prioritizes overdue PayPal invoices using explainable AI scoring.
@@ -62,21 +64,28 @@ flowchart TD
 
 ### 1. Prerequisites
 - Node.js 20+ & npm
-- A free [Supabase](https://supabase.com) project
-- A [PayPal Developer](https://developer.paypal.com) account (Sandbox)
+- Git
 
-### 2. Environment Variables
-Copy `.env.example` to `.env.local` and configure your keys:
+### 2. Clone and Install
+```bash
+git clone https://github.com/Oubay-S/pulsepay.git
+cd pulsepay
+npm install
+```
+
+### 3. Environment Variables
+Copy `.env.example` to `.env.local`:
 ```bash
 cp .env.example .env.local
 ```
+Configure your keys or use the team shared Supabase instance detailed in [docs/CURRENT_STATUS.md](./docs/CURRENT_STATUS.md):
 
 | Variable | Description |
 |---|---|
 | `NEXT_PUBLIC_APP_URL` | Base application URL (`http://localhost:3000`) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role secret key (for server routes & webhooks) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role secret key (server routes & webhooks) |
 | `PAYPAL_ENVIRONMENT` | `sandbox` |
 | `PAYPAL_CLIENT_ID` | PayPal Sandbox App Client ID |
 | `PAYPAL_CLIENT_SECRET` | PayPal Sandbox App Secret |
@@ -84,19 +93,17 @@ cp .env.example .env.local
 | `LLM_PRIMARY_API_KEY` | Google AI Studio Gemini API key (free tier) |
 | `LLM_FALLBACK_API_KEY` | Groq API key (free tier) |
 
-### 3. Database Migration
-Run the SQL migration in your Supabase SQL Editor:
-- Open [`supabase/migrations/001_initial_schema.sql`](./supabase/migrations/001_initial_schema.sql)
-- Paste and execute in your Supabase dashboard SQL editor.
-
-### 4. Seed Demo Data
-Populate the database with the 3 hackathon scenarios:
+### 4. Verify Backend & Seed Demo Data
+Verify database connectivity and sample scenarios:
 ```bash
-# Via npm script:
-npm run seed
+# Run local verification suite:
+npm run test:api
 
-# Or via API endpoint:
-curl -X POST http://localhost:3000/api/demo/reset
+# Run unit test suite (17 tests):
+npm test
+
+# Re-seed demo database if needed:
+npm run seed
 ```
 
 ### 5. Run Development Server
@@ -112,7 +119,7 @@ Visit `http://localhost:3000` for the dashboard and `http://localhost:3000/api/h
 ### Infrastructure & Demo
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/health` | Uptime health check (queries Supabase; keeps Render & DB awake) |
+| `GET` | `/api/health` | Uptime health check (returns `status: "ok"`) |
 | `POST` | `/api/demo/clock` | Advance simulated time (`{ "days": 7 }`) and trigger due installments |
 | `POST` | `/api/demo/reset` | Restore demo business, clients, policies, and the 3 test scenarios |
 | `POST` | `/api/scheduler/run` | Process pending scheduled installments due as of current/simulated date |
@@ -134,10 +141,12 @@ Visit `http://localhost:3000` for the dashboard and `http://localhost:3000/api/h
 | `POST` | `/api/c/:token/message` | Client message -> Intent gate -> LLM turn -> Policy guard |
 | `POST` | `/api/c/:token/accept` | Client accepts an offer -> PayPal executor executes agreement |
 
-### Webhook
-| Method | Endpoint | Description |
+### PayPal Webhook
+| Method | Endpoint | Live Production URL |
 |---|---|---|
-| `POST` | `/api/paypal/webhook` | Handles `INVOICE.PAID`, `CAPTURE.COMPLETED`, etc. with signature verification |
+| `POST` | `/api/paypal/webhook` | `https://pulsepay-rho.vercel.app/api/paypal/webhook` |
+
+Handles `INVOICING.INVOICE.PAID`, `PAYMENT.CAPTURE.COMPLETED`, and `INVOICING.INVOICE.CANCELLED` with cryptographic signature verification.
 
 ---
 
@@ -150,10 +159,10 @@ Visit `http://localhost:3000` for the dashboard and `http://localhost:3000/api/h
 
 ---
 
-## Hackathon Team Roles
-- **Oubay**: Tech Lead & Backend (Repo, schema, API endpoints, policy guard, executor, scheduler, deploy)
-- **Omar**: PayPal Integration (Sandbox, Agent Toolkit, webhooks, checkout flows)
-- **Reda**: AI Agent Engineering (Prompts, intent gate, LLM fallback, adversarial testing)
-- **Taha**: Frontend Architecture (AG Grid aging table, KPI strip, dashboard layout)
-- **Soulaimane**: Client UX & Messaging (Client portal, offer cards, interaction flows)
-- **Mohamed**: Data, Scoring & QA (Priority scoring algorithm, dataset scenarios, E2E validation)
+## Hackathon Team Roles & Branch Mapping
+- **Oubay**: Tech Lead & Backend (`main`) — Repo, schema, API endpoints, policy guard, executor, scheduler, deploy.
+- **Omar**: PayPal Integration (`feat/omar-paypal-toolkit`) — Sandbox, Agent Toolkit, webhooks, checkout flows.
+- **Reda**: AI Agent Engineering (`feat/reda-agent-prompts`) — Prompts, intent gate, LLM fallback, adversarial testing.
+- **Taha**: Frontend Architecture (`feat/taha-dashboard-ui`) — AG Grid aging table, KPI strip, dashboard layout.
+- **Soulaimane**: Client UX & Messaging (`feat/soulaimane-client-portal`) — Client portal, offer cards, interaction flows.
+- **Mohamed**: Data, Scoring & QA (`feat/mohamed-scoring-data`) — Priority scoring algorithm, dataset scenarios, E2E validation.
