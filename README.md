@@ -18,38 +18,38 @@ PulsePay is an autonomous, polite AI assistant designed for freelancers and smal
 ```mermaid
 flowchart TD
     subgraph Owner["Owner Dashboard"]
-        KPI[KPI Strip]
-        GRID[AG Grid Aging Table]
-        POL[Policy Settings]
-        APP[Approvals & Dispute Queue]
-        CLK[Demo Clock Controls]
+        KPI["KPI Strip"]
+        GRID["AG Grid Aging Table"]
+        POL["Policy Settings"]
+        APP["Approvals and Dispute Queue"]
+        CLK["Demo Clock Controls"]
     end
 
-    subgraph Client["Client Portal (/c/:token)"]
-        CHAT[Bilateral Conversation]
-        OFFER[Structured Offer Cards]
-        PAY[PayPal One-Click Checkout]
+    subgraph Client["Client Portal"]
+        CHAT["Bilateral Conversation"]
+        OFFER["Structured Offer Cards"]
+        PAY["PayPal One-Click Checkout"]
     end
 
     subgraph Backend["Next.js Route Handlers"]
-        SYNC[/api/sync]
-        SCORE[Explainable Priority Scoring]
-        INTENT[Intent Gate & Security Filter]
-        LLM[LLM Adapter (Gemini & Groq Fallback)]
-        GUARD[Policy Guard + Zod Schemas]
-        EXEC[PayPal Agreement Executor]
-        SCHED[Installment Scheduler]
-        WH[/api/paypal/webhook]
+        SYNC["/api/sync"]
+        SCORE["Explainable Priority Scoring"]
+        INTENT["Intent Gate and Security Filter"]
+        LLM["LLM Adapter (Gemini and Groq Fallback)"]
+        GUARD["Policy Guard and Zod Schemas"]
+        EXEC["PayPal Agreement Executor"]
+        SCHED["Installment Scheduler"]
+        WH["/api/paypal/webhook"]
     end
 
-    DB[(Supabase Postgres & Realtime)]
-    PP[PayPal Sandbox APIs]
+    DB[("Supabase Postgres and Realtime")]
+    PP["PayPal Sandbox APIs"]
 
     SYNC <--> PP
     SYNC --> DB
     CHAT <--> INTENT --> LLM --> GUARD
     GUARD -->|Within Policy| EXEC --> PP
-    GUARD -->|Outside Policy / Dispute| APP
+    GUARD -->|Outside Policy or Dispute| APP
     APP -->|Owner Sign-off| EXEC
     CLK --> SCHED --> PP
     PP -- Webhooks --> WH --> DB
@@ -92,11 +92,11 @@ Run the SQL migration in your Supabase SQL Editor:
 ### 4. Seed Demo Data
 Populate the database with the 3 hackathon scenarios:
 ```bash
-# Via API endpoint:
-curl -X POST http://localhost:3000/api/demo/reset
+# Via npm script:
+npm run seed
 
-# Or via CLI script:
-npx tsx scripts/seed.ts
+# Or via API endpoint:
+curl -X POST http://localhost:3000/api/demo/reset
 ```
 
 ### 5. Run Development Server
