@@ -12,7 +12,8 @@
     "seed": "npx tsx --env-file=.env.local scripts/seed.ts",
     "spike:paypal": "tsx scripts/paypal-spike.ts",
     "verify:phase1": "tsx scripts/verify-phase1.ts",
-    "verify:webhook": "tsx scripts/verify-webhook.ts"
+    "verify:webhook": "tsx scripts/verify-webhook.ts",
+    "verify:sync": "tsx scripts/verify-sync.ts"
   },
   "dependencies": {
     "@paypal/agent-toolkit": "^1.11.0",
