@@ -67,7 +67,6 @@ Goal: Inquire gently about overdue invoice #${invoice.paypal_invoice_id} ($${amo
           content: `Write a gentle 2-sentence follow-up to ${clientFirstName} regarding their invoice of $${amount}.`,
         },
       ],
-      scenarioHint: invoice.paypal_invoice_id.includes('SARAH') ? 'forgot' : undefined,
     });
 
     const followUpText = llmResult.content;
