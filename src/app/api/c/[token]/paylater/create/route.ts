@@ -11,6 +11,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createPayPalOrder } from '@/lib/paypal/toolkit';
 
+export const maxDuration = 60;
+
 interface InvoiceForOrder {
   id: string;
   status: string;

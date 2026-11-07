@@ -4,6 +4,9 @@ import { executeAgreement } from '@/lib/paypal/executor';
 import { resolvePayableInvoice } from '@/lib/paypal/payer';
 import type { NegotiationProposal } from '@/types/proposals';
 
+// The executor creates, sends, and cancels real PayPal invoices.
+export const maxDuration = 60;
+
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ token: string }> }

@@ -8,6 +8,9 @@ import { getDemoNow } from '@/lib/demo-clock';
 import { checkPolicy } from '@/lib/guard/policy-guard';
 import type { PolicyRow } from '@/types/database';
 
+// LLM calls can be slow on free tiers.
+export const maxDuration = 60;
+
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ token: string }> }

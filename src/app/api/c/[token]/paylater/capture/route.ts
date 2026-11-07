@@ -18,6 +18,8 @@ import {
 } from '@/lib/paypal/toolkit';
 import type { PayPalOrderResponse } from '@/types/paypal';
 
+export const maxDuration = 60;
+
 interface InvoiceForCapture {
   id: string;
   status: string;

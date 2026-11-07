@@ -3,6 +3,9 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { callLLM } from '@/lib/llm';
 import { nanoid } from 'nanoid';
 
+// LLM calls can be slow on free tiers.
+export const maxDuration = 60;
+
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }

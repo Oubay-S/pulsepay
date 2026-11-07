@@ -18,6 +18,9 @@ import { nanoid } from 'nanoid';
 import type { InvoiceStatus } from '@/types/database';
 import type { PayPalInvoice } from '@/types/paypal';
 
+// Paginating the full PayPal account can take several seconds.
+export const maxDuration = 60;
+
 type Supabase = ReturnType<typeof createAdminClient>;
 
 const PAGE_SIZE = 100;

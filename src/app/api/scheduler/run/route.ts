@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processDueInstallments } from '@/lib/scheduler';
 
+// Each due installment creates and sends a real PayPal invoice.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization');

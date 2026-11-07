@@ -4,6 +4,9 @@ import { verifyWebhookSignature } from '@/lib/paypal/webhooks';
 import type { PayPalWebhookEvent } from '@/types/paypal';
 import type { InvoiceStatus } from '@/types/database';
 
+// Signature verification calls PayPal, then the handler writes to Supabase.
+export const maxDuration = 30;
+
 type Supabase = ReturnType<typeof createAdminClient>;
 
 const UUID_RE =
