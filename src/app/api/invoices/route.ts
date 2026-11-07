@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     // Fetch invoices with client relationship
     let query = supabase
       .from('invoices')
-      .select('*, client:clients(*)')
+      .select('*, client:clients(*), conversations(token, status)')
       .order('priority_score', { ascending: false });
 
     if (businessId) {

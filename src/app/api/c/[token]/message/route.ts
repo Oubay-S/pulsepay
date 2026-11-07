@@ -30,6 +30,18 @@ export async function POST(
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
     }
 
+    if (conversation.status !== 'ACTIVE') {
+      return NextResponse.json(
+        {
+          error:
+            conversation.status === 'DISPUTED'
+              ? 'Automation is paused while the business owner reviews your message.'
+              : 'This conversation is closed. The business owner will follow up directly.',
+        },
+        { status: 409 }
+      );
+    }
+
     const invoice = conversation.invoice;
     const business = invoice.business;
     const policy: PolicyRow = business.policies?.[0] || {

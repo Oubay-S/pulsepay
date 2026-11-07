@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { executeAgreement } from '@/lib/paypal/executor';
+import { ProposalSchema } from '@/lib/guard/schemas';
 import type { NegotiationProposal } from '@/types/proposals';
+
+const NEGOTIATION_TYPES = ['discount', 'plan', 'pay_later'] as const;
 
 export async function POST(
   req: NextRequest,
@@ -31,10 +34,56 @@ export async function POST(
       return NextResponse.json({ error: 'Arrangement not found' }, { status: 404 });
     }
 
+    if (arrangement.status !== 'PENDING_APPROVAL') {
+      return NextResponse.json(
+        { error: `This request is no longer pending (status: ${arrangement.status}).` },
+        { status: 400 }
+      );
+    }
+
     const invoice = arrangement.invoice;
+    if (!invoice) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    }
 
     if (action === 'approve') {
-      const proposal = arrangement.terms as unknown as NegotiationProposal;
+      const parsed = ProposalSchema.safeParse(arrangement.terms);
+
+      if (
+        !parsed.success ||
+        !NEGOTIATION_TYPES.includes(parsed.data.type as (typeof NEGOTIATION_TYPES)[number])
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'This is a client request, not an executable proposal. Send a counter-offer with valid terms instead.',
+          },
+          { status: 400 }
+        );
+      }
+
+      const proposal = parsed.data as NegotiationProposal;
+
+      if (proposal.type === 'plan') {
+        const total = proposal.installments.reduce((sum, item) => sum + item.amount, 0);
+        if (total > invoice.amount + 0.05) {
+          return NextResponse.json(
+            { error: 'An approved plan cannot total more than the original invoice.' },
+            { status: 400 }
+          );
+        }
+      }
+
+      if (
+        proposal.type === 'pay_later' &&
+        Math.abs(proposal.invoice_amount - invoice.amount) > 0.01
+      ) {
+        return NextResponse.json(
+          { error: 'Pay Later must match the invoice amount.' },
+          { status: 400 }
+        );
+      }
+
       const executionResult = await executeAgreement(proposal, invoice, arrangement.id);
 
       if (!executionResult.success) {
@@ -59,13 +108,20 @@ export async function POST(
         return NextResponse.json({ error: updateErr.message }, { status: 500 });
       }
 
-      // If there's an active conversation, notify client
+      // If there's an active conversation, notify client and resume automation.
       if (arrangement.conversation_id) {
         await supabase.from('messages').insert({
           conversation_id: arrangement.conversation_id,
           sender: 'OWNER',
-          content: 'The business owner has approved this custom arrangement. Your agreement is now set up in PayPal!',
+          content:
+            'The business owner has approved this custom arrangement. Your agreement is now set up in PayPal!',
         });
+
+        await supabase
+          .from('conversations')
+          .update({ status: 'ACTIVE' })
+          .eq('id', arrangement.conversation_id)
+          .in('status', ['DISPUTED', 'ESCALATED']);
       }
 
       return NextResponse.json({ success: true, arrangement: updatedArr, execution: executionResult });
@@ -101,10 +157,46 @@ export async function POST(
         return NextResponse.json({ error: 'counter_terms required for counter action' }, { status: 400 });
       }
 
+      const parsed = ProposalSchema.safeParse(counter_terms);
+      if (
+        !parsed.success ||
+        !NEGOTIATION_TYPES.includes(parsed.data.type as (typeof NEGOTIATION_TYPES)[number])
+      ) {
+        return NextResponse.json(
+          {
+            error: 'Counter terms must be a valid discount, plan, or Pay Later proposal.',
+            details: parsed.success ? undefined : parsed.error.issues,
+          },
+          { status: 400 }
+        );
+      }
+
+      const proposal = parsed.data as NegotiationProposal;
+
+      if (proposal.type === 'plan') {
+        const total = proposal.installments.reduce((sum, item) => sum + item.amount, 0);
+        if (total > invoice.amount + 0.05) {
+          return NextResponse.json(
+            { error: 'A counter-plan cannot total more than the original invoice.' },
+            { status: 400 }
+          );
+        }
+      }
+
+      if (
+        proposal.type === 'pay_later' &&
+        Math.abs(proposal.invoice_amount - invoice.amount) > 0.01
+      ) {
+        return NextResponse.json(
+          { error: 'Pay Later must match the invoice amount.' },
+          { status: 400 }
+        );
+      }
+
       const { data: updatedArr } = await supabase
         .from('arrangements')
         .update({
-          terms: counter_terms,
+          terms: proposal,
           status: 'PROPOSED',
           approved_by: 'OWNER',
           updated_at: new Date().toISOString(),
@@ -117,8 +209,17 @@ export async function POST(
         await supabase.from('messages').insert({
           conversation_id: arrangement.conversation_id,
           sender: 'OWNER',
-          content: 'The business owner reviewed your request and proposed the revised terms shown below.',
+          content:
+            'The business owner reviewed your request and proposed the revised terms shown below.',
         });
+
+        // A counter-offer is the owner's decision, so the conversation can
+        // return to the normal accept/decline flow.
+        await supabase
+          .from('conversations')
+          .update({ status: 'ACTIVE' })
+          .eq('id', arrangement.conversation_id)
+          .in('status', ['DISPUTED', 'ESCALATED']);
       }
 
       return NextResponse.json({ success: true, arrangement: updatedArr });
@@ -130,4 +231,3 @@ export async function POST(
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

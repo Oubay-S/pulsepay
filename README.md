@@ -13,6 +13,19 @@ PulsePay is an autonomous, polite AI assistant designed for freelancers and smal
 4. Enforces strict business policy guardrails via deterministic Zod schemas before any agreement can touch PayPal.
 5. Features a live-updating AG Grid dashboard, an approval queue for exceptions, and a simulated **Demo Clock** for advance testing.
 
+### Demo screens
+
+| Screen | Production URL | What it shows |
+|---|---|---|
+| Client portal — hardship | [`/c/demo-inv2-marcus-002`](https://pulsepay-rho.vercel.app/c/demo-inv2-marcus-002) | Reply as Marcus, receive a 3 × $400 plan and the Pay Later explanation, accept the plan |
+| Client portal — owner review | [`/c/demo-inv2-alex-003`](https://pulsepay-rho.vercel.app/c/demo-inv2-alex-003) | A 35% request outside policy, waiting for the owner |
+| Client portal — paid | [`/c/demo-inv2-lumiere-007`](https://pulsepay-rho.vercel.app/c/demo-inv2-lumiere-007) | The settled state and the closed conversation |
+| Owner approvals | [`/approvals`](https://pulsepay-rho.vercel.app/approvals) | Approve, reject, or send a counter-offer; disputes pause automation |
+
+For local development, replace the host with `http://localhost:3000`. The portal is mobile-first, polls the token API every 6 seconds, and keeps working without email. If `RESEND_API_KEY` is configured, follow-ups also send the private page link by email.
+
+The seeded invoices use demo PayPal IDs. When the PayPal credentials are placeholders (or `PAYPAL_MOCK_MODE=true`), the executor simulates the PayPal calls so the full accept/installment flow remains demoable. Real Sandbox invoice IDs switch it back to the live API.
+
 ---
 
 ## Architecture Overview
@@ -90,6 +103,7 @@ Configure your keys or use the team shared Supabase instance detailed in [docs/C
 | `PAYPAL_CLIENT_ID` | PayPal Sandbox App Client ID |
 | `PAYPAL_CLIENT_SECRET` | PayPal Sandbox App Secret |
 | `PAYPAL_WEBHOOK_ID` | PayPal Sandbox Webhook ID |
+| `PAYPAL_MOCK_MODE` | `true` simulates PayPal actions locally with mock invoice IDs; placeholder credentials are treated as mock automatically |
 | `LLM_PRIMARY_API_KEY` | Google AI Studio Gemini API key (free tier) |
 | `LLM_FALLBACK_API_KEY` | Groq API key (free tier) |
 

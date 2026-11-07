@@ -15,12 +15,28 @@ let cachedToken: { token: string; expiresAt: number } | null = null;
 /**
  * Retrieves OAuth2 bearer access token from PayPal Sandbox
  */
+function isPlaceholderCredential(value: string | undefined): boolean {
+  const normalized = (value || '').trim().toLowerCase();
+  return (
+    !normalized ||
+    normalized.startsWith('your') ||
+    normalized.startsWith('placeholder') ||
+    normalized === 'sandbox_mock'
+  );
+}
+
 export async function getPayPalAccessToken(): Promise<string> {
   const clientId = process.env.PAYPAL_CLIENT_ID;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
 
-  if (!clientId || !clientSecret) {
-    // If credentials are not yet set in local .env, return a placeholder for mock mode
+  // The hackathon seed uses demo invoice IDs that do not exist in PayPal.
+  // Mock mode keeps the full agreement flow demoable until real Sandbox
+  // invoices are seeded (set PAYPAL_MOCK_MODE=true to force it).
+  if (
+    process.env.PAYPAL_MOCK_MODE === 'true' ||
+    isPlaceholderCredential(clientId) ||
+    isPlaceholderCredential(clientSecret)
+  ) {
     return 'sandbox_mock_access_token';
   }
 

@@ -143,3 +143,42 @@ npm run build
 3. Verify `npm test` and `npm run build` pass with zero errors before opening a PR.
 4. Fill out the PR checklist in `.github/pull_request_template.md`.
 5. Oubay reviews and merges to `main`. Once merged, Vercel updates the production URL automatically.
+
+---
+
+## 7. Day 2 Update — Client Portal & Approvals (Soulaimane)
+
+### New screens
+- **Client portal**: `src/app/c/[token]/page.tsx`
+  - Server-rendered first paint, then 6-second polling.
+  - Agent / client / owner conversation bubbles, quick replies, optimistic sending, typing state.
+  - Offer cards for early-payment discounts, installment plans, and informational PayPal Pay Later.
+  - Pending-owner, disputed, paid, and invalid-link states.
+  - Mobile-first, dark mode, reduced-motion support.
+- **Owner approvals**: `src/app/approvals/page.tsx`
+  - Queue summary, dispute banners, client links.
+  - Approve, reject with a reason, and counter with a discount or an installment plan.
+  - Counter-offers are validated before they become client-facing proposals.
+
+### New libraries
+- `src/lib/client-portal/` — safe token-payload normalization, offer view models, formatting.
+- `src/lib/approvals/` — shared approvals query, request parsing, counter-plan builder.
+- `src/lib/email.ts` — Resend follow-up email with HTML + text versions. Email is optional; the client page works without it.
+
+### Additive API changes
+- `GET /api/c/[token]` now returns `client_name`, `business_tone`, and `demo_now`, with `Cache-Control: no-store`.
+- `GET /api/approvals` now returns `policy`, `demo_now`, and the conversation token for client links.
+- `POST /api/approvals/:id` validates approve/counter terms and resumes a disputed conversation after an owner counter.
+- `POST /api/c/[token]/accept` now verifies that the arrangement belongs to the token's invoice and only allows `ACTIVE` conversations.
+- `POST /api/c/[token]/message` rejects messages while a conversation is paused.
+- `POST /api/invoices/:id/follow-up` now attaches the Resend email result; email failure never blocks the follow-up.
+
+### Verification completed
+- `npm test`: 32/32 passing (policy guard, intent gate, scoring, portal normalization, approvals, email templates).
+- `npx tsc --noEmit` and `npm run build`: clean.
+- Browser checks: new conversation, plan offers, accepted plan, pending owner review, dispute, paid invoice, invalid token, approvals counter, approvals reject; desktop, mobile, and dark mode.
+
+### Open integration points
+- **Omar**: real PayPal checkout/pay link for the client page; the current executor mock creates test IDs. The UI shows the Pay Later card as informational until checkout exists. Placeholder PayPal keys are treated as mock automatically; set `PAYPAL_MOCK_MODE=true` to force mock mode even after real keys are added, until the seed uses real Sandbox invoice IDs.
+- **Taha**: link the dashboard to `/approvals` and add the client-page token to the split view (the approvals cards already open the client page).
+- **Oubay**: service-role key for every teammate's local `.env.local`, and review of the additive API changes above.
