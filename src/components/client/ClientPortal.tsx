@@ -383,7 +383,12 @@ export default function ClientPortal({
   const invoicePaid = data.invoice.status === 'PAID';
   const conversationPaused = data.status !== 'ACTIVE';
   const canMessage = !invoicePaid && !conversationPaused;
-  const pendingApproval = offers.some((offer) => offer.awaitingApproval);
+  // Only the newest offer decides the banner: a fresh in-policy offer replaces an older owner request.
+  const latestOffer = offers.reduce<(typeof offers)[number] | undefined>(
+    (latest, offer) => (!latest || offer.createdAt > latest.createdAt ? offer : latest),
+    undefined
+  );
+  const pendingApproval = latestOffer?.awaitingApproval ?? false;
   const hasClientMessage = data.messages.some((message) => message.sender === 'CLIENT');
   const showQuickReplies =
     !hasClientMessage &&
