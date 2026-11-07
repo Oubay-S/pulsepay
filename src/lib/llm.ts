@@ -29,7 +29,7 @@ interface LLMOptions {
 const DEFAULT_REPLY = 'Thanks for your message. Let me look at the options we can offer you.';
 
 // Some models (e.g. gpt-oss) return tool calls with no text; the client still needs a message.
-const TOOL_REPLIES: Record<string, string> = {
+export const TOOL_REPLIES: Record<string, string> = {
   propose_offer: 'Here are some options that could help. Take a look below and pick whichever works best for you.',
   escalate: "I can't approve that myself, but I've passed your request to the business owner to review.",
   flag_dispute:
