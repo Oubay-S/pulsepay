@@ -1,4 +1,4 @@
-import type { InvoiceRow, ClientRow, InvoiceStatus } from '@/types/database';
+import type { InvoiceRow, ClientRow } from '@/types/database';
 
 export interface PriorityScoreResult {
   score: number; // 0 to 100 (higher means higher priority / urgency)

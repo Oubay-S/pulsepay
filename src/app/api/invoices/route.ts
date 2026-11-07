@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch approvals count
-    let approvalsQuery = supabase
+    const approvalsQuery = supabase
       .from('arrangements')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'PENDING_APPROVAL');
