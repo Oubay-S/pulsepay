@@ -1,26 +1,209 @@
 @import "tailwindcss";
 
+/* ============================================================
+   PulsePay Design System — White-First Premium SaaS
+   Unified with Soulaimane's Client Experience + Apple Materials
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Surfaces & Canvas */
+  --pp-bg: #ffffff;
+  --pp-bg-deep: #f8f9fb;
+  --pp-surface: #ffffff;
+  --pp-surface-soft: #f7f8fa;
+  --pp-surface-muted: #f2f4f7;
+  --pp-surface-hover: rgba(0, 112, 186, 0.04);
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Typography / Ink */
+  --pp-ink: #0b1220;
+  --pp-ink-soft: #5b6675;
+  --pp-ink-faint: #667085;
+  --pp-ink-tertiary: #98a2b3;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Borders & Dividers */
+  --pp-line: #eceff3;
+  --pp-line-strong: #dfe4ea;
+  --pp-line-translucent: rgba(236, 239, 243, 0.8);
+
+  /* Brand: Official PayPal Pro Blue */
+  --pp-accent: #0070ba;
+  --pp-accent-strong: #005ea6;
+  --pp-accent-soft: #eaf3fb;
+  --pp-accent-tint: #f6fafe;
+  --pp-accent-border: rgba(0, 112, 186, 0.22);
+
+  /* Dark Near-Black Actions */
+  --pp-primary: #0b1220;
+  --pp-primary-strong: #1a2536;
+  --pp-primary-soft: #f2f4f7;
+
+  /* States: Money & Receivables Health */
+  --pp-recovered: #067647;
+  --pp-recovered-soft: #ecfdf3;
+  --pp-recovered-border: rgba(6, 118, 71, 0.2);
+
+  --pp-due: #b54708;
+  --pp-due-soft: #fffaeb;
+  --pp-due-border: rgba(181, 71, 8, 0.2);
+
+  --pp-overdue: #b42318;
+  --pp-overdue-soft: #fef3f2;
+  --pp-overdue-border: rgba(180, 35, 24, 0.2);
+
+  --pp-approval: #b54708;
+  --pp-approval-soft: #fffaeb;
+  --pp-approval-border: rgba(181, 71, 8, 0.2);
+
+  --pp-owner: #003087;
+  --pp-owner-soft: #f5f8fd;
+
+  /* Shadows (Apple diffuse, physical elevation) */
+  --pp-shadow-sm: 0 1px 2px rgba(11, 18, 32, 0.04);
+  --pp-shadow-md: 0 10px 30px -24px rgba(11, 18, 32, 0.12);
+  --pp-shadow-lg: 0 24px 56px -34px rgba(11, 18, 32, 0.16);
+  --pp-radius: 14px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--pp-bg-deep);
+  color: var(--pp-ink);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* Tabular figures for financial accuracy */
+.tnum,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Apple Materials & Glass Header */
+.glass-nav-light {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--pp-line);
+  box-shadow: 0 1px 0 var(--pp-line);
+}
+
+.apple-card-light {
+  background: var(--pp-surface);
+  border: 1px solid var(--pp-line);
+  box-shadow: var(--pp-shadow-sm);
+  border-radius: var(--pp-radius);
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 140ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 140ms ease;
+}
+
+.apple-card-light:hover {
+  border-color: var(--pp-line-strong);
+  box-shadow: var(--pp-shadow-md);
+}
+
+.apple-press {
+  transition: transform 100ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 100ms ease,
+              background-color 100ms ease;
+  user-select: none;
+}
+.apple-press:active {
+  transform: scale(0.975);
+}
+
+/* ============================================================
+   AG Grid Quartz Light Customization (Aligned with Quiet Ledger)
+   ============================================================ */
+
+.ag-theme-quartz {
+  --ag-font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif !important;
+  --ag-font-size: 13.5px !important;
+  --ag-background-color: var(--pp-surface) !important;
+  --ag-header-background-color: var(--pp-bg-deep) !important;
+  --ag-header-foreground-color: var(--pp-ink-soft) !important;
+  --ag-data-color: var(--pp-ink) !important;
+  --ag-border-color: var(--pp-line) !important;
+  --ag-row-border-color: var(--pp-line) !important;
+  --ag-row-hover-color: var(--pp-surface-hover) !important;
+  --ag-selected-row-background-color: var(--pp-accent-soft) !important;
+  --ag-cell-horizontal-padding: 16px !important;
+  --ag-row-height: 54px !important;
+  --ag-header-height: 42px !important;
+  border-radius: var(--pp-radius) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--pp-line) !important;
+  box-shadow: var(--pp-shadow-sm) !important;
+}
+
+.ag-header-cell-text {
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: var(--pp-ink-faint) !important;
+}
+
+/* ============================================================
+   Tab / Page Transition Keyframes (Apple spring-feel)
+   - pp-tab-enter: content arrives from slightly below, fades in
+   - pp-tab-exit:  content departs upward, fades out
+   - pp-fade-in:   generic opacity fade (mobile scrim)
+   Both run on compositor-only properties (opacity + transform).
+   ============================================================ */
+
+@keyframes pp-tab-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pp-tab-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pp-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ============================================================
+   Sidebar active indicator — smooth left-edge accent
+   ============================================================ */
+.sidebar-active-indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: 0 2px 2px 0;
+  background: var(--pp-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .apple-press:active {
+    transform: none !important;
+  }
 }
