@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { callLLM } from '@/lib/llm';
 import { buildFollowUpPrompt, followUpTemplate } from '@/lib/agent/prompt';
+import { followUpBlockReason } from '@/lib/agent/limits';
 import { getDemoNow } from '@/lib/demo-clock';
 import { sendFollowUpEmail } from '@/lib/email';
 import { nanoid } from 'nanoid';
@@ -20,7 +21,7 @@ export async function POST(
     // Fetch invoice with business and client
     const { data: invoice, error: invErr } = await supabase
       .from('invoices')
-      .select('*, business:businesses(*), client:clients(*)')
+      .select('*, business:businesses(*, policies(*)), client:clients(*)')
       .eq('id', id)
       .single();
 
@@ -42,6 +43,34 @@ export async function POST(
       .order('token')
       .limit(1)
       .maybeSingle();
+
+    // The portal promises a disputed or closed conversation gets no more automated follow-ups.
+    if (conversation && conversation.status !== 'ACTIVE') {
+      return NextResponse.json(
+        { error: `Automation is paused for this conversation (${conversation.status}).` },
+        { status: 409 }
+      );
+    }
+
+    const now = await getDemoNow();
+    const policy = business?.policies?.[0];
+    if (policy) {
+      const { count } = conversation
+        ? await supabase
+            .from('messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('conversation_id', conversation.id)
+            .eq('intent', 'FOLLOW_UP')
+            .gte('created_at', new Date(Date.now() - 86_400_000).toISOString())
+        : { count: 0 };
+      const blocked = followUpBlockReason({
+        policy,
+        now,
+        sentLast24h: count ?? 0,
+        timeZone: process.env.BUSINESS_TIMEZONE || 'America/Los_Angeles',
+      });
+      if (blocked) return NextResponse.json({ error: blocked }, { status: 429 });
+    }
 
     if (!conversation) {
       const token = nanoid(12);
@@ -65,7 +94,7 @@ export async function POST(
       messages: [
         {
           role: 'system',
-          content: buildFollowUpPrompt({ business, client, invoice, now: await getDemoNow() }),
+          content: buildFollowUpPrompt({ business, client, invoice, now }),
         },
         { role: 'user', content: 'Write the follow-up message.' },
       ],
