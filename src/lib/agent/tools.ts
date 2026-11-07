@@ -1,7 +1,6 @@
-// ============================================================
-// PulsePay — Agent Tool Definitions
-// LLM gets ONLY low-risk & read tools. Money moves only via Executor.
-// ============================================================
+// Tools the LLM may call. None of them move money: proposals go through the
+// policy guard, escalations go to the owner's approval queue.
+// Invoice and client facts are given in the system prompt, so no read tools are needed.
 
 export interface ToolDefinition {
   name: string;
@@ -15,41 +14,8 @@ export interface ToolDefinition {
 
 export const AGENT_TOOLS: ToolDefinition[] = [
   {
-    name: 'get_invoice',
-    description: 'Fetch details and breakdown of the current overdue invoice',
-    parameters: {
-      type: 'object',
-      properties: {
-        invoice_id: { type: 'string', description: 'Internal invoice UUID' },
-      },
-      required: ['invoice_id'],
-    },
-  },
-  {
-    name: 'get_client_history',
-    description: 'Check historical on-time payment rate and previous invoice count for this client',
-    parameters: {
-      type: 'object',
-      properties: {
-        client_id: { type: 'string', description: 'Internal client UUID' },
-      },
-      required: ['client_id'],
-    },
-  },
-  {
-    name: 'send_message',
-    description: 'Send a polite, helpful message to the client on their conversation page',
-    parameters: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', description: 'Text message to display to client' },
-      },
-      required: ['message'],
-    },
-  },
-  {
     name: 'propose_offer',
-    description: 'Propose a structured arrangement: discount, installment plan, or Pay Later',
+    description: 'Propose one arrangement to the client: early-payment discount, installment plan, or PayPal Pay Later',
     parameters: {
       type: 'object',
       properties: {
@@ -68,13 +34,13 @@ export const AGENT_TOOLS: ToolDefinition[] = [
         },
         installments: {
           type: 'array',
-          description: 'If plan: array of installment breakdown with amounts and due dates',
+          description: 'If plan: installments with amounts adding up to the invoice total',
           items: {
             type: 'object',
             properties: {
               number: { type: 'number' },
               amount: { type: 'number' },
-              due_date: { type: 'string' },
+              due_date: { type: 'string', description: 'ISO 8601, e.g. 2026-01-31T00:00:00Z' },
             },
             required: ['number', 'amount', 'due_date'],
           },
@@ -89,18 +55,18 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'escalate',
-    description: 'Escalate conversation to the business owner when client requests exceed policy rules',
+    description: 'Send the request to the business owner when the client asks for more than the policy allows',
     parameters: {
       type: 'object',
       properties: {
-        reason: { type: 'string', description: 'Specific explanation of why escalation is required' },
+        reason: { type: 'string', description: 'What the client asked for and why it needs the owner' },
       },
       required: ['reason'],
     },
   },
   {
     name: 'flag_dispute',
-    description: 'Immediately stop automated negotiation and notify owner of a client work dispute',
+    description: 'Stop automated negotiation and notify the owner of a complaint about the work or service',
     parameters: {
       type: 'object',
       properties: {
@@ -110,4 +76,3 @@ export const AGENT_TOOLS: ToolDefinition[] = [
     },
   },
 ];
-

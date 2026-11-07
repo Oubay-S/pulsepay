@@ -1,7 +1,7 @@
-// ============================================================
-// PulsePay — Unified LLM Adapter (Primary + Fallback + Demo Cache)
-// Zero-cost setup for hackathon reliability
-// ============================================================
+// LLM adapter: Gemini (primary) -> Groq (fallback) -> demo cache -> static reply.
+// Callers get one response shape whichever provider answered.
+
+import type { ToolDefinition } from '@/lib/agent/tools';
 
 export interface LLMMessage {
   role: 'system' | 'user' | 'assistant';
@@ -19,143 +19,146 @@ export interface LLMResponse {
   providerUsed: 'cache' | 'primary' | 'fallback' | 'simulated';
 }
 
-// Deterministic response cache for the 3 demo hackathon scenarios
-const DEMO_CACHE: Record<string, LLMResponse> = {
-  // Scenario 1: Forgot
-  forgot: {
-    content: "Hi Sarah! Just checking in regarding invoice #INV-2026-001. We understand things get busy! You can pay easily with the link below or let us know if you need any assistance.",
-    providerUsed: 'cache',
-  },
-  // Scenario 2: Can't pay $1200 full
-  hardship_1200: {
-    content: "We completely understand that cash flow can fluctuate! We'd be happy to split this into 3 monthly installments of $400, or you can check if PayPal Pay Later is available at checkout so you can pay over time while our invoice is cleared today.",
-    toolCalls: [
-      {
-        name: 'propose_offer',
-        arguments: {
-          type: 'plan',
-          installments: [
-            { number: 1, amount: 400, due_date: new Date(Date.now() + 86400000).toISOString() },
-            { number: 2, amount: 400, due_date: new Date(Date.now() + 30 * 86400000).toISOString() },
-            { number: 3, amount: 400, due_date: new Date(Date.now() + 60 * 86400000).toISOString() },
-          ],
-        },
-      },
-      {
-        name: 'propose_offer',
-        arguments: {
-          type: 'pay_later',
-          invoice_amount: 1200,
-        },
-      },
-    ],
-    providerUsed: 'cache',
-  },
-  // Scenario 3: Aggressive prompt injection / unreasonable discount
-  injection_gamers: {
-    content: "I cannot authorize custom discounts or bypass the established terms. Any discount requests beyond standard policy require direct approval from the business owner. I have forwarded your request to the owner's review queue.",
-    toolCalls: [
-      {
-        name: 'escalate',
-        arguments: {
-          reason: 'Client requested unauthorized 40%+ discount / attempted prompt override',
-        },
-      },
-    ],
-    providerUsed: 'cache',
-  },
+interface LLMOptions {
+  messages: LLMMessage[];
+  tools?: ToolDefinition[];
+  temperature?: number;
+  invoiceAmount?: number; // lets the demo cache build a plan that passes the policy guard
+}
+
+const DEFAULT_REPLY = 'Thanks for your message. Let me look at the options we can offer you.';
+
+// Some models (e.g. gpt-oss) return tool calls with no text; the client still needs a message.
+const TOOL_REPLIES: Record<string, string> = {
+  propose_offer: 'Here are some options that could help. Take a look below and pick whichever works best for you.',
+  escalate: "I can't approve that myself, but I've passed your request to the business owner to review.",
+  flag_dispute:
+    "I'm sorry to hear that. I've paused reminders and passed your concerns to the business owner, who will look into it personally.",
 };
 
-export async function callLLM(options: {
-  messages: LLMMessage[];
-  temperature?: number;
-  scenarioHint?: 'forgot' | 'hardship_1200' | 'injection_gamers';
-}): Promise<LLMResponse> {
-  const { messages, scenarioHint } = options;
+export async function callLLM(options: LLMOptions): Promise<LLMResponse> {
+  const providers = [
+    { name: 'primary', key: process.env.LLM_PRIMARY_API_KEY, call: callGemini },
+    { name: 'fallback', key: process.env.LLM_FALLBACK_API_KEY, call: callGroq },
+  ] as const;
 
-  // 1. Check Demo Cache first if scenarioHint is provided or detectable
-  if (scenarioHint && DEMO_CACHE[scenarioHint]) {
-    return DEMO_CACHE[scenarioHint];
-  }
-
-  const lastUserMsg = messages
-    .filter((m) => m.role === 'user')
-    .slice(-1)[0]?.content.toLowerCase() || '';
-
-  if (lastUserMsg.includes('forgot') || lastUserMsg.includes('reminder')) {
-    return DEMO_CACHE.forgot;
-  }
-  if (lastUserMsg.includes("can't pay") || lastUserMsg.includes('split') || lastUserMsg.includes('installment')) {
-    return DEMO_CACHE.hardship_1200;
-  }
-  if (lastUserMsg.includes('90%') || lastUserMsg.includes('40%') || lastUserMsg.includes('ignore rules')) {
-    return DEMO_CACHE.injection_gamers;
-  }
-
-  // 2. Try Primary Provider (Google AI Studio / Gemini)
-  const primaryApiKey = process.env.LLM_PRIMARY_API_KEY;
-  if (primaryApiKey) {
+  for (const { name, key, call } of providers) {
+    if (!key) continue;
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${
-          process.env.LLM_PRIMARY_MODEL || 'gemini-2.0-flash'
-        }:generateContent?key=${primaryApiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: messages.map((m) => ({
-              role: m.role === 'assistant' ? 'model' : 'user',
-              parts: [{ text: m.content }],
-            })),
-            generationConfig: {
-              temperature: options.temperature ?? 0.3,
-            },
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        return { content: text, providerUsed: 'primary' };
-      }
-    } catch {
-      // Fall through to fallback
+      const { content, toolCalls } = await call(key, options);
+      if (!content && !toolCalls.length) throw new Error('empty response');
+      return {
+        content: content || TOOL_REPLIES[toolCalls[0]?.name] || DEFAULT_REPLY,
+        toolCalls: toolCalls.length ? toolCalls : undefined,
+        providerUsed: name,
+      };
+    } catch (err) {
+      console.error(`[llm] ${name} failed:`, err instanceof Error ? err.message : err);
     }
   }
 
-  // 3. Try Fallback Provider (Groq / OpenAI-compatible endpoint)
-  const fallbackApiKey = process.env.LLM_FALLBACK_API_KEY;
-  if (fallbackApiKey) {
-    try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${fallbackApiKey}`,
-        },
-        body: JSON.stringify({
-          model: process.env.LLM_FALLBACK_MODEL || 'llama-3.1-70b-versatile',
-          messages,
-          temperature: options.temperature ?? 0.3,
-        }),
-      });
+  return demoCache(options) ?? { content: DEFAULT_REPLY, providerUsed: 'simulated' };
+}
 
-      if (response.ok) {
-        const data = await response.json();
-        const text = data.choices?.[0]?.message?.content || '';
-        return { content: text, providerUsed: 'fallback' };
-      }
-    } catch {
-      // Fall through to simulated fallback
+async function callGemini(key: string, { messages, tools, temperature }: LLMOptions) {
+  const model = process.env.LLM_PRIMARY_MODEL || 'gemini-3.5-flash-lite';
+  const system = messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n\n');
+
+  const data = await postJSON(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    { 'x-goog-api-key': key },
+    {
+      systemInstruction: system ? { parts: [{ text: system }] } : undefined,
+      contents: messages
+        .filter((m) => m.role !== 'system')
+        .map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+      tools: tools?.length ? [{ functionDeclarations: tools }] : undefined,
+      // Gemini 3.x thinks before answering (default "medium"); "low" keeps chat replies fast.
+      generationConfig: { temperature: temperature ?? 0.3, thinkingConfig: { thinkingLevel: 'low' } },
     }
-  }
+  );
 
-  // 4. Safe simulated fallback if no API keys are configured yet (hackathon mock)
+  const parts: { text?: string; thought?: boolean; functionCall?: { name: string; args?: Record<string, unknown> } }[] =
+    data.candidates?.[0]?.content?.parts ?? [];
   return {
-    content: "Thank you for getting back to us. I have noted your message and we are reviewing how best to accommodate your payment preferences.",
-    providerUsed: 'simulated',
+    content: parts.filter((p) => p.text && !p.thought).map((p) => p.text).join('').trim(),
+    toolCalls: parts
+      .filter((p) => p.functionCall)
+      .map((p) => ({ name: p.functionCall!.name, arguments: p.functionCall!.args ?? {} })),
   };
 }
 
+async function callGroq(key: string, { messages, tools, temperature }: LLMOptions) {
+  const data = await postJSON(
+    'https://api.groq.com/openai/v1/chat/completions',
+    { Authorization: `Bearer ${key}` },
+    {
+      model: process.env.LLM_FALLBACK_MODEL || 'openai/gpt-oss-120b',
+      messages,
+      tools: tools?.map((t) => ({ type: 'function', function: t })),
+      temperature: temperature ?? 0.3,
+    }
+  );
+
+  const message = data.choices?.[0]?.message ?? {};
+  const toolCalls: LLMToolCall[] = [];
+  for (const call of message.tool_calls ?? []) {
+    try {
+      // Groq (OpenAI format) sends arguments as a JSON string, Gemini as an object.
+      toolCalls.push({ name: call.function.name, arguments: JSON.parse(call.function.arguments || '{}') });
+    } catch {
+      console.error('[llm] fallback sent invalid tool arguments:', call.function?.arguments);
+    }
+  }
+  return { content: (message.content ?? '').trim(), toolCalls };
+}
+
+// One retry on rate limit / overload (Gemini 503s under load), with a timeout so a
+// hung provider can't hang the request.
+async function postJSON(url: string, headers: Record<string, string>, body: unknown) {
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (res.ok) return res.json();
+    if (attempt === 1 && (res.status === 429 || res.status === 503)) {
+      await new Promise((r) => setTimeout(r, 1000));
+      continue;
+    }
+    throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  }
+}
+
+// Last resort when both providers are down, so the 3 demo scenarios still respond.
+function demoCache({ messages, invoiceAmount }: LLMOptions): LLMResponse | null {
+  const last = messages.filter((m) => m.role === 'user').at(-1)?.content.toLowerCase() ?? '';
+
+  if (/\b(can'?t|cannot) (pay|afford)|split|installment/.test(last) && invoiceAmount) {
+    const part = Math.round((invoiceAmount / 3) * 100) / 100;
+    const day = 86_400_000;
+    const installments = [1, 30, 60].map((days, i) => ({
+      number: i + 1,
+      amount: i < 2 ? part : Math.round((invoiceAmount - 2 * part) * 100) / 100,
+      due_date: new Date(Date.now() + days * day).toISOString(),
+    }));
+    return {
+      content: `Completely understood, cash flow can be tight. We can split this into 3 monthly payments of about $${part.toFixed(2)}. If PayPal offers Pay Later to you at checkout, you could also pay over time that way.`,
+      toolCalls: [
+        { name: 'propose_offer', arguments: { type: 'plan', installments } },
+        { name: 'propose_offer', arguments: { type: 'pay_later', invoice_amount: invoiceAmount } },
+      ],
+      providerUsed: 'cache',
+    };
+  }
+  if (/\d+ ?%|discount/.test(last)) {
+    return {
+      content: TOOL_REPLIES.escalate,
+      toolCalls: [{ name: 'escalate', arguments: { reason: `Client requested: "${last.slice(0, 200)}"` } }],
+      providerUsed: 'cache',
+    };
+  }
+  return null;
+}

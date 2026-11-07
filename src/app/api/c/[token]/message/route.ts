@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { detectIntent } from '@/lib/agent/intent-gate';
 import { callLLM } from '@/lib/llm';
+import { AGENT_TOOLS } from '@/lib/agent/tools';
+import { buildNegotiationPrompt } from '@/lib/agent/prompt';
+import { getDemoNow } from '@/lib/demo-clock';
 import { checkPolicy } from '@/lib/guard/policy-guard';
 import type { PolicyRow } from '@/types/database';
 
@@ -22,7 +25,7 @@ export async function POST(
     // 1. Fetch conversation, invoice, policy, business
     const { data: conversation, error: convErr } = await supabase
       .from('conversations')
-      .select('*, invoice:invoices(*, business:businesses(*, policies(*)))')
+      .select('*, invoice:invoices(*, client:clients(*), business:businesses(*, policies(*)))')
       .eq('token', token)
       .single();
 
@@ -121,25 +124,31 @@ export async function POST(
     }
 
     // 4. Normal Negotiation / Assistant Turn
-    // Fetch previous messages for context
+    // Last 10 messages (newest first from the DB, reversed back to chronological)
     const { data: previousMessages } = await supabase
       .from('messages')
       .select('sender, content')
       .eq('conversation_id', conversation.id)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(10);
 
-    const formattedHistory = (previousMessages || []).map((m) => ({
+    const formattedHistory = (previousMessages || []).reverse().map((m) => ({
       role: m.sender === 'AGENT' ? ('assistant' as const) : ('user' as const),
       content: m.content,
     }));
 
+    const systemPrompt = buildNegotiationPrompt({
+      business,
+      client: invoice.client,
+      invoice,
+      policy,
+      now: await getDemoNow(),
+    });
+
     const llmResponse = await callLLM({
-      messages: formattedHistory,
-      scenarioHint:
-        clientContent.toLowerCase().includes("can't pay") || clientContent.includes('split')
-          ? 'hardship_1200'
-          : undefined,
+      messages: [{ role: 'system', content: systemPrompt }, ...formattedHistory],
+      tools: AGENT_TOOLS,
+      invoiceAmount: invoice.amount,
     });
 
     // Save assistant message
@@ -154,6 +163,18 @@ export async function POST(
     const createdOffers = [];
     if (llmResponse.toolCalls) {
       for (const call of llmResponse.toolCalls) {
+        if (call.name === 'escalate' || call.name === 'flag_dispute') {
+          if (call.name === 'flag_dispute') {
+            await supabase.from('conversations').update({ status: 'DISPUTED' }).eq('id', conversation.id);
+          }
+          await supabase.from('arrangements').insert({
+            invoice_id: invoice.id,
+            conversation_id: conversation.id,
+            type: 'DISCOUNT',
+            terms: { reason: String(call.arguments.reason || call.name) },
+            status: 'PENDING_APPROVAL',
+          });
+        }
         if (call.name === 'propose_offer') {
           const proposalCandidate = call.arguments;
           const guardResult = await checkPolicy(proposalCandidate, policy, invoice);
