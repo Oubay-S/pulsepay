@@ -20,6 +20,8 @@ import type {
   ClientPortalData,
   ClientPortalInvoice,
   ClientPortalOffer,
+  ClientPortalPayable,
+  ClientPortalPayLater,
   OfferView,
   PlanInstallmentView,
 } from './types';
@@ -168,6 +170,65 @@ function sanitizeMessage(raw: unknown, fallbackConversationId: string): MessageR
   };
 }
 
+function sanitizePayable(raw: unknown): ClientPortalPayable | null {
+  const record = asRecord(raw);
+  if (!record) return null;
+
+  const paypalInvoiceId = asString(record.paypal_invoice_id);
+  const payerLink = asString(record.payer_link);
+  const amount = asNumber(record.amount);
+  const currency = asString(record.currency);
+  const status = asString(record.status);
+  const kind = asString(record.kind);
+
+  if (
+    !paypalInvoiceId ||
+    !payerLink ||
+    amount === null ||
+    !currency ||
+    !status ||
+    (kind !== 'invoice' && kind !== 'installment')
+  ) {
+    return null;
+  }
+
+  return {
+    paypalInvoiceId,
+    payerLink,
+    amount,
+    currency,
+    status,
+    kind,
+    installmentNumber: asNumber(record.installment_number) ?? undefined,
+  };
+}
+
+function sanitizePayLater(
+  raw: unknown,
+  fallbackAmount: number,
+  fallbackCurrency: string
+): ClientPortalPayLater {
+  const record = asRecord(raw);
+
+  if (!record) {
+    return {
+      available: false,
+      amount: fallbackAmount,
+      currency: fallbackCurrency,
+      createUrl: '',
+      captureUrl: '',
+    };
+  }
+
+  return {
+    available: record.available === true,
+    amount: asNumber(record.amount) ?? fallbackAmount,
+    currency: asString(record.currency) ?? fallbackCurrency,
+    createUrl: asString(record.create_url) ?? '',
+    captureUrl: asString(record.capture_url) ?? '',
+  };
+}
+
 export function normalizeClientPortalData(raw: unknown): ClientPortalData {
   const record = asRecord(raw) ?? {};
   const invoiceRecord = asRecord(record.invoice) ?? {};
@@ -175,6 +236,15 @@ export function normalizeClientPortalData(raw: unknown): ClientPortalData {
   const conversationId = asString(record.conversation_id) ?? '';
   const status = asString(record.status);
   const invoiceStatus = asString(invoiceRecord.status);
+  const invoice: ClientPortalInvoice = {
+    id: asString(invoiceRecord.id) ?? '',
+    number: asString(invoiceRecord.paypal_invoice_id) ?? 'Invoice',
+    amount: asNumber(invoiceRecord.amount) ?? 0,
+    currency: asString(invoiceRecord.currency) ?? 'USD',
+    dueDate: asIso(invoiceRecord.due_date) ?? new Date().toISOString(),
+    description: asString(invoiceRecord.description),
+    status: isOneOf(invoiceStatus, INVOICE_STATUSES) ? invoiceStatus : 'SENT',
+  };
 
   return {
     conversationId,
@@ -183,15 +253,9 @@ export function normalizeClientPortalData(raw: unknown): ClientPortalData {
     clientName: asString(record.client_name),
     businessTone: asString(record.business_tone),
     demoNow: asIso(record.demo_now) ?? new Date().toISOString(),
-    invoice: {
-      id: asString(invoiceRecord.id) ?? '',
-      number: asString(invoiceRecord.paypal_invoice_id) ?? 'Invoice',
-      amount: asNumber(invoiceRecord.amount) ?? 0,
-      currency: asString(invoiceRecord.currency) ?? 'USD',
-      dueDate: asIso(invoiceRecord.due_date) ?? new Date().toISOString(),
-      description: asString(invoiceRecord.description),
-      status: isOneOf(invoiceStatus, INVOICE_STATUSES) ? invoiceStatus : 'SENT',
-    },
+    invoice,
+    payable: sanitizePayable(record.payable),
+    paylater: sanitizePayLater(record.paylater, invoice.amount, invoice.currency),
     messages: asArray(record.messages)
       .map((message) => sanitizeMessage(message, conversationId))
       .filter((message): message is MessageRow => message !== null),

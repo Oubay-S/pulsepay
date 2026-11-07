@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getDemoNow } from '@/lib/demo-clock';
+import { resolvePayableInvoice } from '@/lib/paypal/payer';
 import type { ClientPortalPayload } from './types';
 
 export class ConversationNotFoundError extends Error {
@@ -33,7 +34,7 @@ export async function getClientPortalPayload(token: string): Promise<ClientPorta
     throw new ConversationNotFoundError();
   }
 
-  const [demoNow, messagesResult, offersResult] = await Promise.all([
+  const [demoNow, messagesResult, offersResult, payable] = await Promise.all([
     getDemoNow(),
     supabase
       .from('messages')
@@ -46,6 +47,8 @@ export async function getClientPortalPayload(token: string): Promise<ClientPorta
       .eq('invoice_id', invoice.id)
       .in('status', ['PROPOSED', 'PENDING_APPROVAL', 'ACCEPTED'])
       .order('created_at', { ascending: false }),
+    // A failed payable lookup must not take down the whole client page.
+    resolvePayableInvoice(supabase, invoice).catch(() => null),
   ]);
 
   return {
@@ -63,6 +66,14 @@ export async function getClientPortalPayload(token: string): Promise<ClientPorta
       due_date: invoice.due_date,
       description: invoice.description ?? null,
       status: invoice.status,
+    },
+    payable,
+    paylater: {
+      available: invoice.status === 'SENT',
+      amount: Number(invoice.amount),
+      currency: invoice.currency || 'USD',
+      create_url: `/api/c/${token}/paylater/create`,
+      capture_url: `/api/c/${token}/paylater/capture`,
     },
     messages: messagesResult.data || [],
     offers: offersResult.data || [],

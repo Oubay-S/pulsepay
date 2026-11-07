@@ -443,6 +443,7 @@ export default function ClientPortal({
             businessName={data.businessName}
             clientName={data.clientName}
             demoNow={data.demoNow}
+            payable={data.payable}
           />
 
           <OfferPanel

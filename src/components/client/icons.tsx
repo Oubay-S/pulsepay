@@ -169,6 +169,15 @@ export function WifiOffIcon(props: IconProps) {
   );
 }
 
+export function ArrowUpRightIcon(props: IconProps) {
+  return (
+    <svg {...baseProps} {...props}>
+      <path d="M7 17L17 7" />
+      <path d="M8 7h9v9" />
+    </svg>
+  );
+}
+
 export function SpinnerIcon(props: IconProps) {
   return (
     <svg {...baseProps} {...props} className={`pp-spinner ${props.className ?? ''}`.trim()}>

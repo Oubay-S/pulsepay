@@ -1,4 +1,4 @@
-import type { ClientPortalInvoice } from '@/lib/client-portal/types';
+import type { ClientPortalInvoice, ClientPortalPayable } from '@/lib/client-portal/types';
 import {
   daysPastDue,
   daysUntil,
@@ -7,13 +7,14 @@ import {
   initials,
   pluralize,
 } from '@/lib/client-portal/format';
-import { LockIcon } from './icons';
+import { ArrowUpRightIcon, LockIcon, WalletIcon } from './icons';
 
 interface InvoiceStubProps {
   invoice: ClientPortalInvoice;
   businessName: string;
   clientName: string | null;
   demoNow: string;
+  payable: ClientPortalPayable | null;
 }
 
 interface Stamp {
@@ -93,6 +94,7 @@ export default function InvoiceStub({
   businessName,
   clientName,
   demoNow,
+  payable,
 }: InvoiceStubProps) {
   const stamp = getStamp(invoice, demoNow);
   const now = new Date(demoNow);
@@ -118,6 +120,33 @@ export default function InvoiceStub({
           {stamp.detail}
         </p>
       </div>
+
+      {payable ? (
+        <div className="pp-stub__pay">
+          <a
+            className="pp-pay-btn"
+            href={payable.payerLink}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={
+              payable.kind === 'installment'
+                ? `Pay installment ${payable.installmentNumber ?? ''} in PayPal`
+                : `Pay ${formatMoney(payable.amount, payable.currency)} in PayPal`
+            }
+          >
+            <WalletIcon width={18} height={18} />
+            <span>
+              {payable.kind === 'installment'
+                ? `Pay installment ${payable.installmentNumber ?? ''}`
+                : `Pay ${formatMoney(payable.amount, payable.currency)}`}
+            </span>
+            <ArrowUpRightIcon width={15} height={15} />
+          </a>
+          <p className="pp-stub__pay-note">
+            Secure checkout on PayPal · {formatMoney(payable.amount, payable.currency)}
+          </p>
+        </div>
+      ) : null}
 
       {invoice.description ? (
         <p className="pp-stub__memo" title={invoice.description}>

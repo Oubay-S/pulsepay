@@ -179,6 +179,6 @@ npm run build
 - Browser checks: new conversation, plan offers, accepted plan, pending owner review, dispute, paid invoice, invalid token, approvals counter, approvals reject; desktop, mobile, and dark mode.
 
 ### Open integration points
-- **Omar**: real PayPal checkout/pay link for the client page; the current executor mock creates test IDs. The UI shows the Pay Later card as informational until checkout exists. Placeholder PayPal keys are treated as mock automatically; set `PAYPAL_MOCK_MODE=true` to force mock mode even after real keys are added, until the seed uses real Sandbox invoice IDs.
+- **Omar / Oubay**: share the real PayPal Sandbox app credentials. The merged PayPal layer deliberately refuses to fake money movement when keys are missing. The client page now consumes the payable payer link and the Pay Later routes from `main`.
 - **Taha**: link the dashboard to `/approvals` and add the client-page token to the split view (the approvals cards already open the client page).
 - **Oubay**: service-role key for every teammate's local `.env.local`, and review of the additive API changes above.

@@ -9,9 +9,16 @@
     "lint": "eslint",
     "test": "tsx --test src/lib/**/__tests__/*.test.ts",
     "test:api": "npx tsx --env-file=.env.local scripts/test-api.ts",
-    "seed": "npx tsx --env-file=.env.local scripts/seed.ts"
+    "seed": "npx tsx --env-file=.env.local scripts/seed.ts",
+    "spike:paypal": "tsx scripts/paypal-spike.ts",
+    "verify:phase1": "tsx scripts/verify-phase1.ts",
+    "verify:webhook": "tsx scripts/verify-webhook.ts",
+    "verify:sync": "tsx scripts/verify-sync.ts",
+    "verify:block-c": "tsx scripts/verify-block-c.ts",
+    "verify:paylater": "tsx scripts/verify-paylater.ts"
   },
   "dependencies": {
+    "@paypal/agent-toolkit": "^1.11.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
     "nanoid": "^6.0.2",

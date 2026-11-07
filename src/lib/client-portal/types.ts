@@ -24,6 +24,24 @@ export interface ClientPortalInvoice {
   status: InvoiceStatus;
 }
 
+export interface ClientPortalPayable {
+  paypalInvoiceId: string;
+  payerLink: string;
+  amount: number;
+  currency: string;
+  status: string;
+  kind: 'invoice' | 'installment';
+  installmentNumber?: number;
+}
+
+export interface ClientPortalPayLater {
+  available: boolean;
+  amount: number;
+  currency: string;
+  createUrl: string;
+  captureUrl: string;
+}
+
 export interface ClientPortalData {
   conversationId: string;
   status: ConversationStatus;
@@ -32,6 +50,8 @@ export interface ClientPortalData {
   businessTone: string | null;
   demoNow: string;
   invoice: ClientPortalInvoice;
+  payable: ClientPortalPayable | null;
+  paylater: ClientPortalPayLater;
   messages: MessageRow[];
   offers: ClientPortalOffer[];
 }
@@ -58,6 +78,22 @@ export interface ClientPortalPayload {
     due_date: string;
     description: string | null;
     status: string;
+  };
+  payable: {
+    paypal_invoice_id: string;
+    payer_link: string;
+    amount: number;
+    currency: string;
+    status: string;
+    kind: 'invoice' | 'installment';
+    installment_number?: number;
+  } | null;
+  paylater: {
+    available: boolean;
+    amount: number;
+    currency: string;
+    create_url: string;
+    capture_url: string;
   };
   messages: MessageRow[];
   offers: ClientPortalOffer[];

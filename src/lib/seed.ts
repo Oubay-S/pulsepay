@@ -1,24 +1,140 @@
 // ============================================================
-// PulsePay — Production-Grade Demo Seed & Reset Utility
-// Seeds Business, Policies, Realistic B2B Clients, Invoices,
-// Staged Installments, and the 3 Core Hackathon Scenarios.
+// PulsePay — Demo Seed & Reset Utility
+// Seeds a business, policies, realistic B2B clients, invoices,
+// a staged installment plan, and a pending approval.
+//
+// Every invoice is a real PayPal Sandbox invoice. There are no
+// fake `INV2-...` identifiers and no mock fallback: if PayPal is
+// not configured, seeding fails loudly.
 // ============================================================
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { calculatePriorityScore } from './scoring';
+import {
+  PULSEPAY_DEMO_MARKER,
+  buildInvoicePayload,
+  isPulsePayGeneratedNote,
+} from './paypal/invoices';
+import type { CreatedInvoice, InvoiceDraft } from './paypal/invoices';
+import {
+  cancelPayPalInvoice,
+  createPayPalInvoice,
+  listPayPalInvoices,
+  recordInvoicePayment,
+  sendPayPalInvoiceWithLink,
+} from './paypal/toolkit';
 
-export async function resetAndSeedDatabase(): Promise<{ success: boolean; message: string }> {
+const DAY = 86_400_000;
+const DEMO_MARKER = PULSEPAY_DEMO_MARKER;
+
+function daysAgo(days: number): Date {
+  return new Date(Date.now() - days * DAY);
+}
+
+function daysFromNow(days: number): Date {
+  return new Date(Date.now() + days * DAY);
+}
+
+type SeedInvoiceStatus = 'SENT' | 'PAID' | 'PARTIALLY_PAID' | 'SUPERSEDED';
+
+interface InvoiceSpec {
+  key: string;
+  clientIndex: number;
+  amount: number;
+  dueDaysAgo: number;
+  description: string;
+  token: string;
+  aliasTokens?: string[];
+  /** Amount recorded as an external payment right after sending. */
+  payment?: number;
+}
+
+/**
+ * Cancels leftover PulsePay invoices before a reset so the Sandbox merchant
+ * account does not accumulate duplicate demo invoices on every seed.
+ *
+ * Paid invoices are historical records and cannot be cancelled; they are left
+ * untouched and sync will not import them again (see `isPulsePayGeneratedNote`).
+ */
+async function cancelStalePulsePayInvoices(): Promise<{
+  cancelled: number;
+  skipped: number;
+}> {
+  const first = await listPayPalInvoices(1, 100);
+  const invoices = [...first.invoices];
+  const pages = Math.min(first.totalPages || 1, 20);
+
+  for (let page = 2; page <= pages; page += 1) {
+    const next = await listPayPalInvoices(page, 100);
+    invoices.push(...next.invoices);
+  }
+
+  let cancelled = 0;
+  let skipped = 0;
+
+  for (const invoice of invoices) {
+    if (!isPulsePayGeneratedNote(invoice.detail?.note)) continue;
+
+    if (
+      ['PAID', 'MARKED_AS_PAID', 'CANCELLED', 'REFUNDED'].includes(invoice.status)
+    ) {
+      skipped += 1;
+      continue;
+    }
+
+    try {
+      await cancelPayPalInvoice(invoice.id, 'PulsePay demo reset');
+      cancelled += 1;
+    } catch {
+      // A partially paid invoice cannot be cancelled; it stays as history.
+      skipped += 1;
+    }
+  }
+
+  return { cancelled, skipped };
+}
+
+/**
+ * Creates an invoice and records its ID before sending, so a failed send can
+ * still be cleaned up by the caller.
+ */
+async function createDemoInvoice(
+  draft: InvoiceDraft,
+  createdIds: string[]
+): Promise<CreatedInvoice> {
+  const payload = buildInvoicePayload(draft);
+  const created = await createPayPalInvoice(payload);
+  createdIds.push(created.id);
+
+  const sent = await sendPayPalInvoiceWithLink(created.id);
+
+  return { id: created.id, payerLink: sent.payerLink };
+}
+
+export async function resetAndSeedDatabase(): Promise<{
+  success: boolean;
+  message: string;
+}> {
   const supabase = createAdminClient();
 
-  // 1. Reset demo clock
+  // 1. Cancel leftover demo invoices in PayPal before touching the database.
+  const cleanup = await cancelStalePulsePayInvoices();
+
+  // 2. Reset demo clock.
   await supabase
     .from('demo_clock')
     .upsert({ id: 1, offset_days: 0, updated_at: new Date().toISOString() });
 
-  // 2. Clear previous demo data (cascading foreign keys will clean children)
-  await supabase.from('businesses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  // 3. Clear previous demo data (cascading foreign keys clean children).
+  await supabase
+    .from('businesses')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000');
 
-  // 3. Create Demo Business: Studio Chen Creative LLC (Sarah Chen)
+  // Events have no foreign key to businesses, so clear them explicitly.
+  await supabase.from('events').delete().not('id', 'is', null);
+
+  // 4. Create demo business.
   const { data: business, error: bizErr } = await supabase
     .from('businesses')
     .insert({
@@ -34,7 +150,7 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
     throw new Error(`Failed to create demo business: ${bizErr?.message}`);
   }
 
-  // 4. Create Merchant Negotiation Policy
+  // 5. Merchant negotiation policy.
   const { error: polErr } = await supabase.from('policies').insert({
     business_id: business.id,
     max_discount_pct: 10,
@@ -50,12 +166,12 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
     throw new Error(`Failed to create policy: ${polErr.message}`);
   }
 
-  // 5. Create 8 Realistic B2B Clients with authentic personas
+  // 6. Eight realistic B2B clients.
   const clientsData = [
     {
       business_id: business.id,
       name: 'Elena Rostova',
-      email: 'elena.rostova@aurahealth.co', // VP Marketing, Aura Health Media
+      email: 'elena.rostova@aurahealth.co',
       on_time_rate: 90,
       total_invoices: 6,
       total_paid: 5,
@@ -63,7 +179,7 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
     {
       business_id: business.id,
       name: 'Marcus Reed',
-      email: 'm.reed@apexathletics.io', // Co-Founder & CEO, Apex Athletics
+      email: 'm.reed@apexathletics.io',
       on_time_rate: 65,
       total_invoices: 5,
       total_paid: 3,
@@ -71,7 +187,7 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
     {
       business_id: business.id,
       name: 'Julian Hayes',
-      email: 'j.hayes@vanguardlogic.com', // VP Engineering, Vanguard Logic Systems
+      email: 'j.hayes@vanguardlogic.com',
       on_time_rate: 40,
       total_invoices: 4,
       total_paid: 1,
@@ -79,7 +195,7 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
     {
       business_id: business.id,
       name: 'Dr. Aris Thorne',
-      email: 'thorne@kromabiotech.org', // Chief Medical Officer, Kroma BioTech Labs
+      email: 'thorne@kromabiotech.org',
       on_time_rate: 55,
       total_invoices: 3,
       total_paid: 1,
@@ -87,7 +203,7 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
     {
       business_id: business.id,
       name: 'Nadia Benali',
-      email: 'nadia.benali@atlasmediagroup.com', // Head of Strategy, Atlas Media Group
+      email: 'nadia.benali@atlasmediagroup.com',
       on_time_rate: 85,
       total_invoices: 7,
       total_paid: 6,
@@ -95,7 +211,7 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
     {
       business_id: business.id,
       name: 'Lucas Moreau',
-      email: 'l.moreau@solsticerobotics.com', // Product Director, Solstice Robotics Inc.
+      email: 'l.moreau@solsticerobotics.com',
       on_time_rate: 30,
       total_invoices: 5,
       total_paid: 1,
@@ -103,7 +219,7 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
     {
       business_id: business.id,
       name: 'Chloe Dupont',
-      email: 'c.dupont@lumierestudio.fr', // Creative Director, Lumière Studio Paris
+      email: 'c.dupont@lumierestudio.fr',
       on_time_rate: 95,
       total_invoices: 8,
       total_paid: 8,
@@ -111,7 +227,7 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
     {
       business_id: business.id,
       name: 'Tariq Al-Mansoor',
-      email: 'tariq@oasisventures.co', // Managing Partner, Oasis Ventures
+      email: 'tariq@oasisventures.co',
       on_time_rate: 80,
       total_invoices: 4,
       total_paid: 3,
@@ -123,185 +239,296 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
     .insert(clientsData)
     .select();
 
-  if (clientErr || !clients || clients.length < 8) {
+  if (clientErr || !clients || clients.length < clientsData.length) {
     throw new Error(`Failed to insert clients: ${clientErr?.message}`);
   }
 
-  const [elena, marcus, julian, aris, nadia, lucas, chloe, tariq] = clients;
   const now = new Date();
 
-  // 6. Define 8 Realistic Invoices spanning all aging buckets & scenarios
-  // Bucket 1: 0–30 Days Overdue
-  const elenaDueDate = new Date(now.getTime() - 7 * 86400000); // 7 days late
-  const elenaScore = calculatePriorityScore({ amount: 850, due_date: elenaDueDate.toISOString(), status: 'SENT' }, elena, now);
-
-  const nadiaDueDate = new Date(now.getTime() - 12 * 86400000); // 12 days late
-  const nadiaScore = calculatePriorityScore({ amount: 650, due_date: nadiaDueDate.toISOString(), status: 'SENT' }, nadia, now);
-
-  // Bucket 2: 31–60 Days Overdue
-  const marcusDueDate = new Date(now.getTime() - 18 * 86400000); // 18 days late
-  const marcusScore = calculatePriorityScore({ amount: 1200, due_date: marcusDueDate.toISOString(), status: 'SENT' }, marcus, now);
-
-  const julianDueDate = new Date(now.getTime() - 35 * 86400000); // 35 days late
-  const julianScore = calculatePriorityScore({ amount: 3500, due_date: julianDueDate.toISOString(), status: 'SENT' }, julian, now);
-
-  const arisDueDate = new Date(now.getTime() - 48 * 86400000); // 48 days late
-  const arisScore = calculatePriorityScore({ amount: 2800, due_date: arisDueDate.toISOString(), status: 'SENT' }, aris, now);
-
-  const tariqDueDate = new Date(now.getTime() - 28 * 86400000); // 28 days late (installment arrangement active)
-  const tariqScore = calculatePriorityScore({ amount: 2400, due_date: tariqDueDate.toISOString(), status: 'PARTIALLY_PAID' }, tariq, now);
-
-  // Bucket 3: 60+ Days Overdue (Critical Severity)
-  const lucasDueDate = new Date(now.getTime() - 68 * 86400000); // 68 days late
-  const lucasScore = calculatePriorityScore({ amount: 1750, due_date: lucasDueDate.toISOString(), status: 'SENT' }, lucas, now);
-
-  // Bucket 4: Settled / Paid (Populates Recovered KPI)
-  const chloeDueDate = new Date(now.getTime() - 24 * 86400000);
-  const chloeScore = calculatePriorityScore({ amount: 920, due_date: chloeDueDate.toISOString(), status: 'PAID' }, chloe, now);
-
-  const invoicesToInsert = [
+  // 7. Invoice specs. Amounts and aging buckets match the demo script.
+  const invoiceSpecs: InvoiceSpec[] = [
     {
-      business_id: business.id,
-      client_id: elena.id,
-      paypal_invoice_id: 'INV2-ELENA-001',
+      key: 'elena',
+      clientIndex: 0,
       amount: 850,
-      currency: 'USD',
-      due_date: elenaDueDate.toISOString(),
-      status: 'SENT' as const,
-      priority_score: elenaScore.score,
-      priority_reason: elenaScore.reason,
+      dueDaysAgo: 7,
       description: 'Q3 Brand Guidelines & Visual Asset Refresh',
+      token: 'demo-inv2-elena-001',
+      aliasTokens: ['demo-inv2-sarah-001'],
     },
     {
-      business_id: business.id,
-      client_id: marcus.id,
-      paypal_invoice_id: 'INV2-MARCUS-002',
+      key: 'marcus',
+      clientIndex: 1,
       amount: 1200,
-      currency: 'USD',
-      due_date: marcusDueDate.toISOString(),
-      status: 'SENT' as const,
-      priority_score: marcusScore.score,
-      priority_reason: marcusScore.reason,
+      dueDaysAgo: 18,
       description: 'E-Commerce Checkout Redesign & Mobile Prototype',
+      token: 'demo-inv2-marcus-002',
     },
     {
-      business_id: business.id,
-      client_id: julian.id,
-      paypal_invoice_id: 'INV2-ALEX-003', // Preserves INV2-ALEX-003 for team compatibility
+      key: 'julian',
+      clientIndex: 2,
       amount: 3500,
-      currency: 'USD',
-      due_date: julianDueDate.toISOString(),
-      status: 'SENT' as const,
-      priority_score: julianScore.score,
-      priority_reason: julianScore.reason,
+      dueDaysAgo: 35,
       description: 'Enterprise Design System & React Component Library',
+      token: 'demo-inv2-alex-003',
+      aliasTokens: ['demo-inv2-julian-003'],
     },
     {
-      business_id: business.id,
-      client_id: aris.id,
-      paypal_invoice_id: 'INV2-KROMA-004',
+      key: 'aris',
+      clientIndex: 3,
       amount: 2800,
-      currency: 'USD',
-      due_date: arisDueDate.toISOString(),
-      status: 'SENT' as const,
-      priority_score: arisScore.score,
-      priority_reason: arisScore.reason,
+      dueDaysAgo: 48,
       description: 'Interactive Clinical Trial Data Visualization Dashboard',
+      token: 'demo-inv2-kroma-004',
+      payment: 1000,
     },
     {
-      business_id: business.id,
-      client_id: nadia.id,
-      paypal_invoice_id: 'INV2-ATLAS-005',
+      key: 'nadia',
+      clientIndex: 4,
       amount: 650,
-      currency: 'USD',
-      due_date: nadiaDueDate.toISOString(),
-      status: 'SENT' as const,
-      priority_score: nadiaScore.score,
-      priority_reason: nadiaScore.reason,
+      dueDaysAgo: 12,
       description: 'Keynote Investor Presentation & Infographic Kit',
+      token: 'demo-inv2-atlas-005',
     },
     {
-      business_id: business.id,
-      client_id: lucas.id,
-      paypal_invoice_id: 'INV2-SOLSTICE-006',
+      key: 'lucas',
+      clientIndex: 5,
       amount: 1750,
-      currency: 'USD',
-      due_date: lucasDueDate.toISOString(),
-      status: 'SENT' as const,
-      priority_score: lucasScore.score,
-      priority_reason: lucasScore.reason,
+      dueDaysAgo: 68,
       description: 'Telemetry Interface & Realtime Mission Control UI',
+      token: 'demo-inv2-solstice-006',
     },
     {
-      business_id: business.id,
-      client_id: chloe.id,
-      paypal_invoice_id: 'INV2-LUMIERE-007',
+      key: 'chloe',
+      clientIndex: 6,
       amount: 920,
-      currency: 'USD',
-      due_date: chloeDueDate.toISOString(),
-      status: 'PAID' as const,
-      priority_score: chloeScore.score,
-      priority_reason: chloeScore.reason,
+      dueDaysAgo: 24,
       description: 'Custom Typography Licensing & Editorial Layouts',
+      token: 'demo-inv2-lumiere-007',
+      payment: 920,
     },
     {
-      business_id: business.id,
-      client_id: tariq.id,
-      paypal_invoice_id: 'INV2-OASIS-008',
+      key: 'tariq',
+      clientIndex: 7,
       amount: 2400,
-      currency: 'USD',
-      due_date: tariqDueDate.toISOString(),
-      status: 'PARTIALLY_PAID' as const,
-      priority_score: tariqScore.score,
-      priority_reason: tariqScore.reason,
+      dueDaysAgo: 28,
       description: 'Annual Strategic Design Advisory — Q3 Retainer',
+      token: 'demo-inv2-oasis-008',
     },
   ];
 
-  const { data: insertedInvoices, error: invErr } = await supabase
-    .from('invoices')
-    .insert(invoicesToInsert)
-    .select();
+  const createdPayPalIds: string[] = [];
 
-  if (invErr || !insertedInvoices || insertedInvoices.length < 8) {
-    throw new Error(`Failed to insert invoices: ${invErr?.message}`);
-  }
+  try {
+    // 8. Create and send every invoice as a real PayPal Sandbox invoice.
+    const settled = await Promise.allSettled(
+      invoiceSpecs.map(async (spec) => {
+        const client = clients[spec.clientIndex];
+        const dueDate = daysAgo(spec.dueDaysAgo);
+        const invoiceDate = new Date(dueDate.getTime() - 14 * DAY);
 
-  // 7. Initialize Client Portal Conversation Tokens
-  for (const inv of insertedInvoices) {
-    const token = `demo-${inv.paypal_invoice_id.toLowerCase()}`;
-    await supabase.from('conversations').insert({
-      invoice_id: inv.id,
-      token,
-      status: 'ACTIVE',
+        const created = await createDemoInvoice(
+          {
+            businessName: business.name,
+            clientName: client.name,
+            clientEmail: client.email,
+            currency: 'USD',
+            amount: spec.amount,
+            description: spec.description,
+            note: `${DEMO_MARKER} ${spec.description}`,
+            invoiceDate,
+            dueDate,
+          },
+          createdPayPalIds
+        );
+
+        return {
+          spec,
+          client,
+          dueDate,
+          paypalId: created.id,
+          status: 'SENT' as SeedInvoiceStatus,
+          payerLink: created.payerLink,
+        };
+      })
+    );
+
+    const failures = settled.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected'
+    );
+
+    if (failures.length > 0) {
+      const reasons = failures
+        .map((failure) =>
+          failure.reason instanceof Error
+            ? failure.reason.message
+            : String(failure.reason)
+        )
+        .join(' | ');
+      throw new Error(`Failed to create ${failures.length} demo invoice(s): ${reasons}`);
+    }
+
+    const prepared = settled.map(
+      (result) => (result as PromiseFulfilledResult<{
+        spec: InvoiceSpec;
+        client: (typeof clients)[number];
+        dueDate: Date;
+        paypalId: string;
+        status: SeedInvoiceStatus;
+        payerLink?: string;
+      }>).value
+    );
+
+    // 9. Record real payments so PayPal's status matches the dashboard.
+    await Promise.all(
+      prepared.map(async (row) => {
+        if (!row.spec.payment) return;
+
+        await recordInvoicePayment(row.paypalId, row.spec.payment, {
+          note: `${DEMO_MARKER} Payment recorded by seed`,
+        });
+
+        row.status =
+          row.spec.payment >= row.spec.amount ? 'PAID' : 'PARTIALLY_PAID';
+      })
+    );
+
+    // 10. Tariq's plan: supersede the parent invoice and pay installment 1.
+    const tariq = prepared.find((row) => row.spec.key === 'tariq');
+    if (!tariq) {
+      throw new Error('Tariq invoice was not prepared');
+    }
+
+    await cancelPayPalInvoice(
+      tariq.paypalId,
+      'Superseded by installment plan (demo seed)'
+    );
+    tariq.status = 'SUPERSEDED';
+
+    const installmentOne = await createDemoInvoice(
+      {
+        businessName: business.name,
+        clientName: tariq.client.name,
+        clientEmail: tariq.client.email,
+        currency: 'USD',
+        amount: 800,
+        description: `Installment 1 of 3 — ${tariq.spec.description}`,
+        note: `${DEMO_MARKER} Installment 1 of 3`,
+        invoiceDate: daysAgo(28),
+        dueDate: daysAgo(14),
+      },
+      createdPayPalIds
+    );
+
+    await recordInvoicePayment(installmentOne.id, 800, {
+      note: `${DEMO_MARKER} Installment 1 paid`,
     });
-  }
 
-  // Add alias token for backward compatibility with docs/CURRENT_STATUS.md
-  // ("demo-inv2-sarah-001" points to Elena's invoice INV2-ELENA-001)
-  const elenaInv = insertedInvoices.find((i) => i.paypal_invoice_id === 'INV2-ELENA-001');
-  if (elenaInv) {
-    await supabase.from('conversations').insert({
-      invoice_id: elenaInv.id,
-      token: 'demo-inv2-sarah-001',
-      status: 'ACTIVE',
+    // 11. Persist invoices with their real PayPal IDs.
+    const invoiceRows = prepared.map(({ spec, client, dueDate, paypalId, status }) => {
+      const priority =
+        status === 'SENT' || status === 'PARTIALLY_PAID'
+          ? calculatePriorityScore(
+              {
+                amount: spec.amount,
+                due_date: dueDate.toISOString(),
+                status,
+              },
+              client,
+              now
+            )
+          : {
+              score: 0,
+              reason:
+                status === 'PAID'
+                  ? 'Paid via PayPal'
+                  : 'Superseded by installment plan',
+            };
+
+      return {
+        business_id: business.id,
+        client_id: client.id,
+        paypal_invoice_id: paypalId,
+        amount: spec.amount,
+        currency: 'USD',
+        due_date: dueDate.toISOString(),
+        status,
+        priority_score: priority.score,
+        priority_reason: priority.reason,
+        description: spec.description,
+      };
     });
-  }
 
-  // 8. Pre-seed Active Staged Installment Plan for Tariq (Oasis Ventures)
-  // Demonstrates the Staged Installment Scheduler and Arrangement Timeline
-  const tariqInv = insertedInvoices.find((i) => i.paypal_invoice_id === 'INV2-OASIS-008');
-  if (tariqInv) {
-    const { data: tariqArrangement } = await supabase
+    const { data: insertedInvoices, error: invErr } = await supabase
+      .from('invoices')
+      .insert(invoiceRows)
+      .select();
+
+    if (
+      invErr ||
+      !insertedInvoices ||
+      insertedInvoices.length !== invoiceRows.length
+    ) {
+      throw new Error(`Failed to insert invoices: ${invErr?.message}`);
+    }
+
+    // 12. Stable client portal tokens (independent of PayPal IDs).
+    const specByPaypalId = new Map(
+      prepared.map((row) => [row.paypalId, row.spec])
+    );
+
+    const conversations = insertedInvoices.flatMap((invoice) => {
+      const spec = specByPaypalId.get(invoice.paypal_invoice_id);
+      if (!spec) return [];
+
+      return [spec.token, ...(spec.aliasTokens ?? [])].map((token) => ({
+        invoice_id: invoice.id,
+        token,
+        status: 'ACTIVE',
+      }));
+    });
+
+    if (conversations.length > 0) {
+      const { error: conversationError } = await supabase
+        .from('conversations')
+        .insert(conversations);
+
+      if (conversationError) {
+        throw new Error(
+          `Failed to create client conversations: ${conversationError.message}`
+        );
+      }
+    }
+
+    // 13. Staged installment plan for Tariq (Oasis Ventures).
+    const tariqInvoice = insertedInvoices.find(
+      (invoice) => invoice.paypal_invoice_id === tariq.paypalId
+    );
+
+    if (!tariqInvoice) {
+      throw new Error('Tariq invoice row was not inserted');
+    }
+
+    const installmentDueDates = [
+      daysAgo(14),
+      daysFromNow(16),
+      daysFromNow(46),
+    ];
+
+    const { data: tariqArrangement, error: arrangementError } = await supabase
       .from('arrangements')
       .insert({
-        invoice_id: tariqInv.id,
+        invoice_id: tariqInvoice.id,
         type: 'PLAN',
         terms: {
-          installments: 3,
-          first_amount: 800,
-          installment_amount: 800,
-          total_amount: 2400,
+          type: 'plan',
+          original_amount: tariq.spec.amount,
+          num_installments: 3,
+          installments: installmentDueDates.map((dueDate, index) => ({
+            number: index + 1,
+            amount: 800,
+            due_date: dueDate.toISOString(),
+          })),
         },
         status: 'ACCEPTED',
         approved_by: 'AGENT_AUTO',
@@ -309,22 +536,29 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
       .select()
       .single();
 
-    if (tariqArrangement) {
-      await supabase.from('installments').insert([
+    if (arrangementError || !tariqArrangement) {
+      throw new Error(
+        `Failed to create Tariq arrangement: ${arrangementError?.message}`
+      );
+    }
+
+    const { error: installmentError } = await supabase
+      .from('installments')
+      .insert([
         {
           arrangement_id: tariqArrangement.id,
           number: 1,
           amount: 800,
-          due_date: new Date(now.getTime() - 14 * 86400000).toISOString(),
+          due_date: installmentDueDates[0].toISOString(),
           status: 'PAID',
-          paid_at: new Date(now.getTime() - 14 * 86400000).toISOString(),
-          paypal_invoice_id: 'INV2-OASIS-008-INST-1',
+          paid_at: installmentDueDates[0].toISOString(),
+          paypal_invoice_id: installmentOne.id,
         },
         {
           arrangement_id: tariqArrangement.id,
           number: 2,
           amount: 800,
-          due_date: new Date(now.getTime() + 16 * 86400000).toISOString(),
+          due_date: installmentDueDates[1].toISOString(),
           status: 'SCHEDULED',
           paypal_invoice_id: null,
         },
@@ -332,45 +566,81 @@ export async function resetAndSeedDatabase(): Promise<{ success: boolean; messag
           arrangement_id: tariqArrangement.id,
           number: 3,
           amount: 800,
-          due_date: new Date(now.getTime() + 46 * 86400000).toISOString(),
+          due_date: installmentDueDates[2].toISOString(),
           status: 'SCHEDULED',
           paypal_invoice_id: null,
         },
       ]);
+
+    if (installmentError) {
+      throw new Error(
+        `Failed to create Tariq installments: ${installmentError.message}`
+      );
     }
-  }
 
-  // 9. Pre-seed Pending Approval for Julian (Vanguard Logic)
-  // Ensures the "Needs Approval" KPI badge displays 1 item immediately
-  const julianInv = insertedInvoices.find((i) => i.paypal_invoice_id === 'INV2-ALEX-003');
-  if (julianInv) {
-    await supabase.from('arrangements').insert({
-      invoice_id: julianInv.id,
-      type: 'DISCOUNT',
-      terms: {
-        requested_discount_pct: 35,
-        discounted_amount: 2275,
-        reason: 'Client requested 35% discount citing budget freezes; exceeds 10% policy threshold',
+    // 14. Pending approval for Julian (Vanguard Logic).
+    const julianInvoice = insertedInvoices.find(
+      (invoice) =>
+        invoice.paypal_invoice_id ===
+        prepared.find((row) => row.spec.key === 'julian')?.paypalId
+    );
+
+    if (julianInvoice) {
+      const { error: approvalError } = await supabase
+        .from('arrangements')
+        .insert({
+          invoice_id: julianInvoice.id,
+          type: 'DISCOUNT',
+          terms: {
+            requested_discount_pct: 35,
+            discounted_amount: 2275,
+            reason:
+              'Client requested 35% discount citing budget freezes; exceeds 10% policy threshold',
+          },
+          status: 'PENDING_APPROVAL',
+          approved_by: null,
+        });
+
+      if (approvalError) {
+        throw new Error(
+          `Failed to create pending approval: ${approvalError.message}`
+        );
+      }
+    }
+
+    // 15. Log the seed event.
+    await supabase.from('events').insert({
+      type: 'DEMO_DATA_SEEDED',
+      actor: 'SYSTEM',
+      payload: {
+        businessId: business.id,
+        invoicesCreated: insertedInvoices.length,
+        clientsCreated: clients.length,
+        paypalInvoicesCancelled: cleanup.cancelled,
+        paypalInvoicesKept: cleanup.skipped,
+        timestamp: new Date().toISOString(),
       },
-      status: 'PENDING_APPROVAL',
-      approved_by: null,
     });
+
+    return {
+      success: true,
+      message:
+        `Seeded "${business.name}" with ${clients.length} clients and ` +
+        `${insertedInvoices.length} real PayPal Sandbox invoices. ` +
+        `Cancelled ${cleanup.cancelled} stale demo invoice(s) before seeding.`,
+    };
+  } catch (error) {
+    // Never leave payable invoices behind when a seed fails halfway through.
+    await Promise.all(
+      createdPayPalIds.map(async (paypalId) => {
+        try {
+          await cancelPayPalInvoice(paypalId, 'PulsePay demo seed failed');
+        } catch {
+          // Already paid or already cancelled.
+        }
+      })
+    );
+
+    throw error;
   }
-
-  // 10. Log Initial Seed Event
-  await supabase.from('events').insert({
-    type: 'DEMO_DATA_SEEDED',
-    actor: 'SYSTEM',
-    payload: {
-      businessId: business.id,
-      invoicesCreated: insertedInvoices.length,
-      clientsCreated: clients.length,
-      timestamp: new Date().toISOString(),
-    },
-  });
-
-  return {
-    success: true,
-    message: `Database successfully seeded with "${business.name}", 8 realistic B2B clients, aging buckets, staged installments, and pending approvals.`,
-  };
 }

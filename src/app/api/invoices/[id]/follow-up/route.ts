@@ -4,6 +4,9 @@ import { callLLM } from '@/lib/llm';
 import { sendFollowUpEmail } from '@/lib/email';
 import { nanoid } from 'nanoid';
 
+// LLM calls can be slow on free tiers.
+export const maxDuration = 60;
+
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -68,7 +71,6 @@ Goal: Inquire gently about overdue invoice #${invoice.paypal_invoice_id} ($${amo
           content: `Write a gentle 2-sentence follow-up to ${clientFirstName} regarding their invoice of $${amount}.`,
         },
       ],
-      scenarioHint: invoice.paypal_invoice_id.includes('SARAH') ? 'forgot' : undefined,
     });
 
     const followUpText = llmResult.content;
