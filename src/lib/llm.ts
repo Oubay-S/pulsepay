@@ -26,7 +26,8 @@ interface LLMOptions {
   invoiceAmount?: number; // lets the demo cache build a plan that passes the policy guard
 }
 
-const DEFAULT_REPLY = 'Thanks for your message. Let me look at the options we can offer you.';
+// Shown when no model answered: must not promise anything that won't follow.
+const DEFAULT_REPLY = "Thanks for your message. I've noted it, and the business owner will follow up here if needed.";
 
 // Some models (e.g. gpt-oss) return tool calls with no text; the client still needs a message.
 export const TOOL_REPLIES: Record<string, string> = {
