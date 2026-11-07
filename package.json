@@ -7,9 +7,13 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "seed": "npx tsx scripts/seed.ts"
+    "seed": "npx tsx scripts/seed.ts",
+    "spike:paypal": "tsx scripts/paypal-spike.ts",
+    "verify:phase1": "tsx scripts/verify-phase1.ts",
+    "verify:webhook": "tsx scripts/verify-webhook.ts"
   },
   "dependencies": {
+    "@paypal/agent-toolkit": "^1.11.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
     "nanoid": "^6.0.2",
@@ -27,6 +31,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
