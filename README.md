@@ -17,7 +17,7 @@ PulsePay is an autonomous, polite AI assistant designed for freelancers and smal
 
 | Screen | Production URL | What it shows |
 |---|---|---|
-| Client portal — hardship | [`/c/demo-inv2-marcus-002`](https://pulsepay-rho.vercel.app/c/demo-inv2-marcus-002) | Reply as Marcus, receive a 3 × $400 plan and the Pay Later explanation, accept the plan |
+| Client portal — hardship | [`/c/demo-inv2-marcus-002`](https://pulsepay-rho.vercel.app/c/demo-inv2-marcus-002) | Reply as Marcus, receive a 3 × $400 plan and the official PayPal checkout button, accept the plan |
 | Client portal — owner review | [`/c/demo-inv2-alex-003`](https://pulsepay-rho.vercel.app/c/demo-inv2-alex-003) | A 35% request outside policy, waiting for the owner |
 | Client portal — paid | [`/c/demo-inv2-lumiere-007`](https://pulsepay-rho.vercel.app/c/demo-inv2-lumiere-007) | The settled state and the closed conversation |
 | Owner approvals | [`/approvals`](https://pulsepay-rho.vercel.app/approvals) | Approve, reject, or send a counter-offer; disputes pause automation |
@@ -161,7 +161,7 @@ PayPal webhook endpoint:
 https://pulsepay-rho.vercel.app/api/paypal/webhook
 ```
 
-Pay Later appears only for eligible Sandbox buyers; it is shown honestly as “if PayPal offers it to you.”
+Pay Later is rendered through the official PayPal JS SDK, using `NEXT_PUBLIC_PAYPAL_CLIENT_ID`. The button and Pay Later funding are shown only when PayPal makes them available for the buyer.
 
 ---
 

@@ -1,13 +1,19 @@
-import type { ClientPortalInvoice, OfferView } from '@/lib/client-portal/types';
+import type {
+  ClientPortalInvoice,
+  ClientPortalPayLater,
+  OfferView,
+} from '@/lib/client-portal/types';
 import OfferCard from './OfferCard';
-import { ShieldCheckIcon, SparklesIcon } from './icons';
+import { SparklesIcon } from './icons';
 
 interface OfferPanelProps {
   offers: OfferView[];
   invoice: ClientPortalInvoice;
   businessName: string;
   demoNow: string;
+  paylater: ClientPortalPayLater | null;
   onAccept: (id: string) => void;
+  onCaptured: () => void;
   acceptingId: string | null;
   error: { offerId: string; message: string } | null;
   variant: 'side' | 'inline';
@@ -18,7 +24,9 @@ export default function OfferPanel({
   invoice,
   businessName,
   demoNow,
+  paylater,
   onAccept,
+  onCaptured,
   acceptingId,
   error,
   variant,
@@ -31,9 +39,6 @@ export default function OfferPanel({
       aria-label="Payment options"
     >
       <div className="pp-offers__head">
-        <span className="pp-offers__icon" aria-hidden>
-          <ShieldCheckIcon width={18} height={18} />
-        </span>
         <div>
           <h2 className="pp-offers__title">Ways to pay</h2>
           <p className="pp-offers__sub">
@@ -63,7 +68,9 @@ export default function OfferPanel({
               invoice={invoice}
               businessName={businessName}
               demoNow={demoNow}
+              paylater={paylater}
               onAccept={onAccept}
+              onCaptured={onCaptured}
               busy={acceptingId === offer.id}
               error={error?.offerId === offer.id ? error.message : null}
             />

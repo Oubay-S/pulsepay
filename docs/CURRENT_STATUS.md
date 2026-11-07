@@ -153,7 +153,7 @@ npm run build
   - Server-rendered first paint, then 6-second polling.
   - Real **Pay in PayPal** CTA from the merged `payable.payer_link` (works for invoices and plan installments).
   - Agent / client / owner conversation bubbles, quick replies, optimistic sending, typing state.
-  - Offer rows for early-payment discounts, installment plans, and informational PayPal Pay Later.
+  - Offer rows for early-payment discounts, installment plans, and the official PayPal JS SDK Pay Later checkout.
   - Pending-owner, disputed, paid, and invalid-link states.
   - Mobile-first, dark mode, reduced-motion support.
 - **Owner approvals**: `src/app/approvals/page.tsx`
@@ -184,7 +184,7 @@ npm run build
 - Browser checks: new conversation, plan offers, accepted plan, pending owner review, dispute, paid invoice, invalid token, approvals counter, approvals reject; desktop, mobile, and dark mode.
 
 ### Open integration points
-- **Omar / Oubay**: share the real PayPal Sandbox app credentials. The merged PayPal layer deliberately refuses to fake money movement when keys are missing. The client page consumes the payable payer link; Pay Later is still presented as informational until we render the PayPal JS SDK inside the existing card.
+- **Omar / Oubay**: PayPal Sandbox app credentials are now in `.env`; `NEXT_PUBLIC_PAYPAL_CLIENT_ID` mirrors `PAYPAL_CLIENT_ID` for the browser SDK. The client page consumes the payable payer link and renders the official PayPal JS SDK in the Pay Later card.
 - **Taha**: the client portal now has a real pay CTA and a compact invoice journey; reuse `src/app/pulsepay-theme.css` tokens for the dashboard if helpful.
 - **Taha**: link the dashboard to `/approvals` and add the client-page token to the split view (the approvals cards already open the client page).
 - **Oubay**: service-role key for every teammate's local `.env.local`, and review of the additive API changes above.

@@ -83,12 +83,6 @@ function getStatus(invoice: ClientPortalInvoice, demoNow: string): StatusView {
   }
 }
 
-function stageFor(invoice: ClientPortalInvoice): number {
-  if (invoice.status === 'PAID') return 2;
-  if (invoice.status === 'SUPERSEDED' || invoice.status === 'PARTIALLY_PAID') return 1;
-  return 0;
-}
-
 export default function InvoiceStub({
   invoice,
   businessName,
@@ -98,7 +92,6 @@ export default function InvoiceStub({
 }: InvoiceStubProps) {
   const status = getStatus(invoice, demoNow);
   const now = new Date(demoNow);
-  const stage = stageFor(invoice);
   const payLabel = payable
     ? `Pay ${formatMoney(payable.amount, payable.currency)} with PayPal`
     : null;
@@ -192,20 +185,6 @@ export default function InvoiceStub({
           <dd>{invoice.currency}</dd>
         </div>
       </dl>
-
-      <div className="pp-rail" aria-label="Payment journey">
-        {['Invoice', 'Agreement', 'Paid'].map((label, index) => (
-          <div
-            key={label}
-            className={`pp-rail__step ${index < stage ? 'is-done' : ''} ${
-              index === stage ? 'is-current' : ''
-            }`}
-          >
-            <span className="pp-rail__dot" aria-hidden />
-            <span className="pp-rail__label">{label}</span>
-          </div>
-        ))}
-      </div>
 
       <p className="pp-stub__footnote">
         <LockIcon width={13} height={13} />

@@ -350,6 +350,10 @@ export default function ClientPortal({
     setRetrying(false);
   }, [load]);
 
+  const handleCaptured = useCallback(() => {
+    void load({ silent: true });
+  }, [load]);
+
   if (loading && !data) {
     return <PortalSkeleton />;
   }
@@ -451,7 +455,9 @@ export default function ClientPortal({
             invoice={data.invoice}
             businessName={data.businessName}
             demoNow={data.demoNow}
+            paylater={data.paylater}
             onAccept={(id) => void handleAccept(id)}
+            onCaptured={handleCaptured}
             acceptingId={acceptingId}
             error={acceptError}
             variant="side"
@@ -537,7 +543,9 @@ export default function ClientPortal({
               invoice={data.invoice}
               businessName={data.businessName}
               demoNow={data.demoNow}
+              paylater={data.paylater}
               onAccept={(id) => void handleAccept(id)}
+              onCaptured={handleCaptured}
               acceptingId={acceptingId}
               error={acceptError}
               variant="inline"

@@ -1,9 +1,14 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import type { ClientPortalInvoice, OfferView } from '@/lib/client-portal/types';
+import type {
+  ClientPortalInvoice,
+  ClientPortalPayLater,
+  OfferView,
+} from '@/lib/client-portal/types';
 import { formatDate, formatMoney, pluralize } from '@/lib/client-portal/format';
 import InstallmentTimeline from './InstallmentTimeline';
+import PayPalPayLater from './PayPalPayLater';
 import {
   CalendarIcon,
   CheckCircleIcon,
@@ -18,7 +23,9 @@ interface OfferCardProps {
   invoice: ClientPortalInvoice;
   businessName: string;
   demoNow: string;
+  paylater: ClientPortalPayLater | null;
   onAccept: (id: string) => void;
+  onCaptured: () => void;
   busy: boolean;
   error: string | null;
 }
@@ -84,7 +91,9 @@ export default function OfferCard({
   invoice,
   businessName,
   demoNow,
+  paylater,
   onAccept,
+  onCaptured,
   busy,
   error,
 }: OfferCardProps) {
@@ -124,7 +133,12 @@ export default function OfferCard({
       ) : null}
 
       {offer.kind === 'pay_later' ? (
-        <PayLaterOfferBody offer={offer} currency={invoice.currency} />
+        <PayLaterOfferBody
+          offer={offer}
+          currency={invoice.currency}
+          paylater={paylater}
+          onCaptured={onCaptured}
+        />
       ) : null}
 
       {offer.kind === 'request' ? (
@@ -302,10 +316,18 @@ function DiscountOfferBody({
 function PayLaterOfferBody({
   offer,
   currency,
+  paylater,
+  onCaptured,
 }: {
   offer: Extract<OfferView, { kind: 'pay_later' }>;
   currency: string;
+  paylater: ClientPortalPayLater | null;
+  onCaptured: () => void;
 }) {
+  const canCheckout = Boolean(
+    paylater?.available && paylater.createUrl && paylater.captureUrl
+  );
+
   return (
     <>
       <h3 className="pp-offer__title" id={`offer-${offer.id}`}>
@@ -316,10 +338,24 @@ function PayLaterOfferBody({
         {formatMoney(offer.amount, currency)} into smaller payments while the business is paid in
         full upfront.
       </p>
-      <div className="pp-offer__note">
-        <WalletIcon width={16} height={16} />
-        <span>Subject to PayPal eligibility. You&apos;ll see the option at PayPal checkout.</span>
-      </div>
+
+      {canCheckout && paylater ? (
+        <PayPalPayLater
+          createUrl={paylater.createUrl}
+          captureUrl={paylater.captureUrl}
+          currency={paylater.currency || currency}
+          onCaptured={onCaptured}
+        />
+      ) : (
+        <div className="pp-offer__note">
+          <WalletIcon width={16} height={16} />
+          <span>Subject to PayPal eligibility. You&apos;ll see the option at PayPal checkout.</span>
+        </div>
+      )}
+
+      <p className="pp-offer__micro">
+        PayPal Pay Later availability depends on your account and region.
+      </p>
     </>
   );
 }

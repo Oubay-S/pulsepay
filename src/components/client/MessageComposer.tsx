@@ -89,7 +89,6 @@ export default function MessageComposer({
     <div className="pp-composer">
       {showQuickReplies ? (
         <div className="pp-quick-replies" aria-label="Suggested replies">
-          <span className="pp-quick-replies__label">Quick replies</span>
           <div className="pp-quick-replies__list">
             {QUICK_REPLIES.map((reply) => (
               <button

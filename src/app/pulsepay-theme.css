@@ -1,43 +1,46 @@
 /* ============================================================
    PulsePay — shared client + owner theme
-   PayPal-clean: white surfaces, PayPal blues, quiet gray
-   supporting tones, and minimal elevation. Shared by
-   /c/[token] and /approvals.
+   White-first premium surface. Near-black actions carry the
+   hierarchy; PayPal blue is reserved for links, focus,
+   selected states, and the official PayPal checkout button.
    ============================================================ */
 
 .pp-portal,
 .ap-root {
-  --pp-bg: #f5f7fa;
-  --pp-bg-deep: #edf1f7;
+  --pp-bg: #ffffff;
+  --pp-bg-deep: #f7f8fa;
   --pp-surface: #ffffff;
-  --pp-surface-soft: #f7f9fc;
-  --pp-surface-muted: #eef2f7;
-  --pp-ink: #001435;
-  --pp-ink-soft: #5b6670;
-  --pp-ink-faint: #6c7378;
-  --pp-line: #e2e8f0;
-  --pp-line-strong: #cbd5e1;
-  --pp-primary: #0070ba;
-  --pp-primary-strong: #005ea6;
-  --pp-primary-soft: #eaf3fb;
-  --pp-primary-tint: #f3f8fd;
-  --pp-accent: #009cde;
-  --pp-recovered: #007a3d;
-  --pp-recovered-soft: #e8f5ee;
-  --pp-due: #9a5b00;
-  --pp-due-soft: #fff4e5;
+  --pp-surface-soft: #f7f8fa;
+  --pp-surface-muted: #f2f4f7;
+  --pp-ink: #0b1220;
+  --pp-ink-soft: #5b6675;
+  --pp-ink-faint: #667085;
+  --pp-line: #eceff3;
+  --pp-line-strong: #dfe4ea;
+  --pp-primary: #0b1220;
+  --pp-primary-strong: #1a2536;
+  --pp-primary-soft: #f2f4f7;
+  --pp-primary-tint: #fafbfc;
+  --pp-accent: #0070ba;
+  --pp-accent-strong: #005ea6;
+  --pp-accent-soft: #eaf3fb;
+  --pp-accent-tint: #f6fafe;
+  --pp-recovered: #067647;
+  --pp-recovered-soft: #ecfdf3;
+  --pp-due: #b54708;
+  --pp-due-soft: #fffaeb;
   --pp-overdue: #b42318;
-  --pp-overdue-soft: #fdecea;
-  --pp-approval: #9a5b00;
-  --pp-approval-soft: #fff4e5;
+  --pp-overdue-soft: #fef3f2;
+  --pp-approval: #b54708;
+  --pp-approval-soft: #fffaeb;
   --pp-owner: #003087;
-  --pp-owner-soft: #eaf0f9;
-  --pp-client-bubble: #f2f5f9;
-  --pp-shadow-sm: 0 1px 2px rgba(0, 20, 53, 0.05);
-  --pp-shadow-md: 0 10px 28px -22px rgba(0, 20, 53, 0.22);
-  --pp-shadow-lg: 0 24px 56px -34px rgba(0, 20, 53, 0.28);
-  --pp-radius: 14px;
-  --pp-radius-sm: 10px;
+  --pp-owner-soft: #f5f8fd;
+  --pp-client-bubble: #ffffff;
+  --pp-shadow-sm: 0 1px 2px rgba(11, 18, 32, 0.04);
+  --pp-shadow-md: 0 10px 30px -24px rgba(11, 18, 32, 0.16);
+  --pp-shadow-lg: 0 24px 56px -34px rgba(11, 18, 32, 0.2);
+  --pp-radius: 12px;
+  --pp-radius-sm: 8px;
   --pp-font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   position: relative;
@@ -97,20 +100,23 @@
   .pp-portal,
   .ap-root {
     --pp-bg: #0b1220;
-    --pp-bg-deep: #09101c;
-    --pp-surface: #111a2c;
-    --pp-surface-soft: #0f1828;
-    --pp-surface-muted: #16223a;
-    --pp-ink: #e6edf5;
-    --pp-ink-soft: #a9b7c9;
-    --pp-ink-faint: #8fa1b8;
-    --pp-line: #22304a;
-    --pp-line-strong: #31415d;
-    --pp-primary: #4a9eff;
-    --pp-primary-strong: #7bbcff;
-    --pp-primary-soft: #13233a;
-    --pp-primary-tint: #0f1c2e;
-    --pp-accent: #55b8f5;
+    --pp-bg-deep: #080e18;
+    --pp-surface: #111827;
+    --pp-surface-soft: #161e2e;
+    --pp-surface-muted: #1c2638;
+    --pp-ink: #f2f5f9;
+    --pp-ink-soft: #aab6c6;
+    --pp-ink-faint: #8b99ad;
+    --pp-line: #263247;
+    --pp-line-strong: #33425b;
+    --pp-primary: #f2f5f9;
+    --pp-primary-strong: #ffffff;
+    --pp-primary-soft: #1a2436;
+    --pp-primary-tint: #141d2c;
+    --pp-accent: #4a9eff;
+    --pp-accent-strong: #7bbcff;
+    --pp-accent-soft: #13233a;
+    --pp-accent-tint: #0f1c2e;
     --pp-recovered: #4ade80;
     --pp-recovered-soft: #102a1c;
     --pp-due: #f5b942;
@@ -121,8 +127,8 @@
     --pp-approval-soft: #2a2212;
     --pp-owner: #9cc3ff;
     --pp-owner-soft: #15243b;
-    --pp-client-bubble: #1a2638;
-    --pp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --pp-client-bubble: #141d2c;
+    --pp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
     --pp-shadow-md: 0 16px 40px -28px rgba(0, 0, 0, 0.9);
     --pp-shadow-lg: 0 26px 64px -34px rgba(0, 0, 0, 0.95);
   }
