@@ -1,6 +1,9 @@
 // ============================================================
 // PulsePay — PayPal Webhook Verification
-// Uses official PayPal verify-webhook-signature API
+// Uses PayPal's official verify-webhook-signature API.
+//
+// There is no implicit development bypass: a missing signature is
+// rejected unless PAYPAL_WEBHOOK_SKIP_VERIFY is explicitly "true".
 // ============================================================
 
 import { getPayPalAccessToken } from './toolkit';
@@ -18,71 +21,96 @@ export interface WebhookHeaderBundle {
   transmissionTime: string | null;
 }
 
+export function readWebhookHeaders(headers: Headers): WebhookHeaderBundle {
+  return {
+    authAlgo: headers.get('paypal-auth-algo'),
+    certUrl: headers.get('paypal-cert-url'),
+    transmissionId: headers.get('paypal-transmission-id'),
+    transmissionSig: headers.get('paypal-transmission-sig'),
+    transmissionTime: headers.get('paypal-transmission-time'),
+  };
+}
+
 /**
- * Validates the cryptographic signature of a PayPal webhook event
- * using PayPal's server-side verification endpoint.
+ * Validates the cryptographic signature of a PayPal webhook event using
+ * PayPal's server-side verification endpoint.
+ *
+ * Returns false for any missing transmission header, missing webhook ID,
+ * network failure or non-SUCCESS verification status.
  */
 export async function verifyWebhookSignature(
   headers: Headers,
   rawBody: string,
   webhookId: string = process.env.PAYPAL_WEBHOOK_ID || ''
 ): Promise<boolean> {
-  const authAlgo = headers.get('paypal-auth-algo');
-  const certUrl = headers.get('paypal-cert-url');
-  const transmissionId = headers.get('paypal-transmission-id');
-  const transmissionSig = headers.get('paypal-transmission-sig');
-  const transmissionTime = headers.get('paypal-transmission-time');
+  // Explicit, documented escape hatch for local experiments only.
+  if (process.env.PAYPAL_WEBHOOK_SKIP_VERIFY === 'true') {
+    console.warn(
+      'PAYPAL_WEBHOOK_SKIP_VERIFY=true — webhook signature verification is disabled'
+    );
+    return true;
+  }
 
-  // In local test or if webhook headers are missing
-  if (!authAlgo || !certUrl || !transmissionId || !transmissionSig || !transmissionTime) {
-    if (process.env.NODE_ENV === 'development' || !webhookId) {
-      // Allow test events in local development
-      return true;
-    }
+  const bundle = readWebhookHeaders(headers);
+
+  if (
+    !bundle.authAlgo ||
+    !bundle.certUrl ||
+    !bundle.transmissionId ||
+    !bundle.transmissionSig ||
+    !bundle.transmissionTime
+  ) {
+    return false;
+  }
+
+  if (!webhookId) {
+    console.error('PAYPAL_WEBHOOK_ID is not set; cannot verify webhook signature');
+    return false;
+  }
+
+  let parsedEvent: Record<string, unknown>;
+  try {
+    parsedEvent = JSON.parse(rawBody);
+  } catch {
     return false;
   }
 
   try {
     const accessToken = await getPayPalAccessToken();
-    if (accessToken === 'sandbox_mock_access_token') {
-      return true;
-    }
-
-    let parsedEvent: Record<string, unknown>;
-    try {
-      parsedEvent = JSON.parse(rawBody);
-    } catch {
-      return false;
-    }
 
     const payload = {
-      auth_algo: authAlgo,
-      cert_url: certUrl,
-      transmission_id: transmissionId,
-      transmission_sig: transmissionSig,
-      transmission_time: transmissionTime,
+      auth_algo: bundle.authAlgo,
+      cert_url: bundle.certUrl,
+      transmission_id: bundle.transmissionId,
+      transmission_sig: bundle.transmissionSig,
+      transmission_time: bundle.transmissionTime,
       webhook_id: webhookId,
       webhook_event: parsedEvent,
     };
 
-    const res = await fetch(`${PAYPAL_API_BASE}/v1/notifications/verify-webhook-signature`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(
+      `${PAYPAL_API_BASE}/v1/notifications/verify-webhook-signature`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      }
+    );
 
     if (!res.ok) {
+      console.error(
+        `PayPal webhook verification failed: ${res.status} ${await res.text()}`
+      );
       return false;
     }
 
-    const data = await res.json();
+    const data = (await res.json()) as { verification_status?: string };
     return data.verification_status === 'SUCCESS';
   } catch (err) {
     console.error('Error verifying webhook signature:', err);
     return false;
   }
 }
-
