@@ -1825,21 +1825,4 @@
   }
 }
 
-/* ---------- Dark-mode component adjustments ---------- */
 
-@media (prefers-color-scheme: dark) {
-  .pp-portal::before {
-    background: var(--pp-bg);
-  }
-
-  .pp-pay-btn,
-  .pp-btn--primary,
-  .pp-composer__send,
-  .pp-mark {
-    color: #0b1220;
-  }
-
-  .pp-pay-btn > svg:first-of-type {
-    color: var(--pp-accent);
-  }
-}

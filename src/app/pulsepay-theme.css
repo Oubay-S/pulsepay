@@ -5,8 +5,15 @@
    selected states, and the official PayPal checkout button.
    ============================================================ */
 
+html,
+body {
+  background: #ffffff;
+  color-scheme: light;
+}
+
 .pp-portal,
 .ap-root {
+  color-scheme: light;
   --pp-bg: #ffffff;
   --pp-bg-deep: #f7f8fa;
   --pp-surface: #ffffff;
@@ -94,44 +101,6 @@
 .pp-portal ol,
 .ap-root ol {
   list-style: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .pp-portal,
-  .ap-root {
-    --pp-bg: #0b1220;
-    --pp-bg-deep: #080e18;
-    --pp-surface: #111827;
-    --pp-surface-soft: #161e2e;
-    --pp-surface-muted: #1c2638;
-    --pp-ink: #f2f5f9;
-    --pp-ink-soft: #aab6c6;
-    --pp-ink-faint: #8b99ad;
-    --pp-line: #263247;
-    --pp-line-strong: #33425b;
-    --pp-primary: #f2f5f9;
-    --pp-primary-strong: #ffffff;
-    --pp-primary-soft: #1a2436;
-    --pp-primary-tint: #141d2c;
-    --pp-accent: #4a9eff;
-    --pp-accent-strong: #7bbcff;
-    --pp-accent-soft: #13233a;
-    --pp-accent-tint: #0f1c2e;
-    --pp-recovered: #4ade80;
-    --pp-recovered-soft: #102a1c;
-    --pp-due: #f5b942;
-    --pp-due-soft: #2a2212;
-    --pp-overdue: #ff8a80;
-    --pp-overdue-soft: #2a1717;
-    --pp-approval: #f5b942;
-    --pp-approval-soft: #2a2212;
-    --pp-owner: #9cc3ff;
-    --pp-owner-soft: #15243b;
-    --pp-client-bubble: #141d2c;
-    --pp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
-    --pp-shadow-md: 0 16px 40px -28px rgba(0, 0, 0, 0.9);
-    --pp-shadow-lg: 0 26px 64px -34px rgba(0, 0, 0, 0.95);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
