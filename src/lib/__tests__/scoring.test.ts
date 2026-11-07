@@ -14,7 +14,27 @@ describe('Scoring — Priority & Explainability Engine', () => {
 
     const res = calculatePriorityScore(invoice, null, refDate);
     assert.equal(res.score, 0);
-    assert.match(res.reason, /already settled/i);
+    assert.match(res.reason, /settled in full/i);
+  });
+
+  it('assigns score 0 to cancelled or superseded invoices', () => {
+    const cancelled = {
+      amount: 2000,
+      due_date: '2026-10-01T00:00:00Z',
+      status: 'CANCELLED' as const,
+    };
+    const resCancelled = calculatePriorityScore(cancelled, null, refDate);
+    assert.equal(resCancelled.score, 0);
+    assert.match(resCancelled.reason, /cancelled/i);
+
+    const superseded = {
+      amount: 1200,
+      due_date: '2026-10-15T00:00:00Z',
+      status: 'SUPERSEDED' as const,
+    };
+    const resSuperseded = calculatePriorityScore(superseded, null, refDate);
+    assert.equal(resSuperseded.score, 0);
+    assert.match(resSuperseded.reason, /superseded/i);
   });
 
   it('assigns low urgency score (10) to invoices due today or in the future', () => {
@@ -26,6 +46,7 @@ describe('Scoring — Priority & Explainability Engine', () => {
 
     const res = calculatePriorityScore(invoice, null, refDate);
     assert.equal(res.score, 10);
+    assert.match(res.reason, /due today/i);
   });
 
   it('calculates higher urgency for long overdue invoices with high dollar value and risky clients', () => {
@@ -44,8 +65,8 @@ describe('Scoring — Priority & Explainability Engine', () => {
     const res = calculatePriorityScore(overdueInvoice, riskyClient, refDate);
     assert.ok(res.score >= 70, `Score expected >= 70, received ${res.score}`);
     assert.match(res.reason, /30 days overdue/);
-    assert.match(res.reason, /\$3[,\s\u202F]500/);
-    assert.match(res.reason, /elevated risk profile \(40% on-time rate\)/);
+    assert.match(res.reason, /\$3,500/);
+    assert.match(res.reason, /high-risk history \(40% on-time\)/);
   });
 
   it('recognizes reliable client history in explainable reason', () => {
@@ -56,12 +77,12 @@ describe('Scoring — Priority & Explainability Engine', () => {
     };
 
     const goodClient = {
-      name: 'Sarah Chen',
+      name: 'Elena Rostova',
       on_time_rate: 90,
       total_invoices: 6,
     };
 
     const res = calculatePriorityScore(overdueInvoice, goodClient, refDate);
-    assert.match(res.reason, /reliable client \(90% on-time rate\)/);
+    assert.match(res.reason, /reliable client \(90% on-time\)/);
   });
 });
