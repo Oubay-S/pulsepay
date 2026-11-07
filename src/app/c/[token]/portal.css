@@ -11,9 +11,9 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(880px 460px at 8% -10%, rgba(31, 90, 71, 0.07), transparent 62%),
-    radial-gradient(720px 460px at 102% 0%, rgba(176, 138, 79, 0.055), transparent 58%),
-    linear-gradient(180deg, #f8f9f5 0%, var(--pp-bg) 42%);
+    radial-gradient(880px 460px at 8% -10%, rgba(0, 112, 186, 0.055), transparent 62%),
+    radial-gradient(720px 460px at 102% 0%, rgba(0, 156, 222, 0.045), transparent 58%),
+    linear-gradient(180deg, #fbfdff 0%, var(--pp-bg) 42%);
 }
 
 .pp-shell {
@@ -59,7 +59,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  background: var(--pp-bg);
+  background: var(--pp-surface);
   box-shadow: 0 1px 0 var(--pp-line);
 }
 
@@ -76,10 +76,9 @@
   flex: 0 0 34px;
   display: grid;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--pp-primary) 12%, transparent);
-  border-radius: 11px;
-  background: var(--pp-primary-soft);
-  color: var(--pp-primary);
+  border-radius: 9px;
+  background: var(--pp-primary);
+  color: #fff;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -275,14 +274,14 @@
   justify-content: center;
   gap: 8px;
   min-height: 48px;
-  padding: 0 16px;
-  border-radius: 12px;
+  padding: 0 20px;
+  border-radius: 999px;
   background: var(--pp-primary);
   color: #fff;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   text-decoration: none;
-  box-shadow: 0 12px 24px -18px rgba(31, 90, 71, 0.65);
+  box-shadow: 0 8px 18px -14px rgba(0, 112, 186, 0.5);
   transition:
     background 0.16s ease,
     transform 0.1s ease;
@@ -324,7 +323,7 @@
   gap: 7px;
   margin-top: 20px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--pp-recovered-soft);
   color: var(--pp-recovered);
   font-size: 12px;
@@ -557,7 +556,7 @@
   gap: 9px;
   margin: 10px 14px 0;
   padding: 10px 11px;
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .pp-banner__icon {
@@ -885,7 +884,7 @@
 .pp-offers__list {
   overflow: hidden;
   border: 1px solid var(--pp-line);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--pp-surface);
 }
 
@@ -1277,7 +1276,7 @@
   gap: 8px;
   padding: 5px 5px 5px 13px;
   border: 1px solid var(--pp-line-strong);
-  border-radius: 16px;
+  border-radius: 12px;
   background: var(--pp-surface-soft);
   transition:
     border-color 0.15s ease,
@@ -1316,7 +1315,7 @@
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 12px;
+  border-radius: 999px;
   background: var(--pp-primary);
   color: #fff;
   cursor: pointer;
@@ -1361,9 +1360,9 @@
   justify-content: center;
   gap: 7px;
   min-height: 44px;
-  padding: 0 16px;
+  padding: 0 18px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 999px;
   font: inherit;
   font-size: 12.5px;
   font-weight: 600;
@@ -1411,9 +1410,9 @@
 
 .pp-btn--sm {
   min-height: 32px;
-  padding: 0 10px;
+  padding: 0 12px;
   font-size: 10.5px;
-  border-radius: 9px;
+  border-radius: 999px;
 }
 
 .pp-btn:disabled {
@@ -1468,7 +1467,7 @@
   flex-direction: column;
   align-items: center;
   border: 1px solid var(--pp-line);
-  border-radius: 24px;
+  border-radius: 16px;
   background: var(--pp-surface);
   box-shadow: var(--pp-shadow-sm);
   text-align: center;
@@ -1790,19 +1789,19 @@
 @media (prefers-color-scheme: dark) {
   .pp-portal::before {
     background:
-      radial-gradient(880px 460px at 8% -10%, rgba(80, 160, 125, 0.1), transparent 62%),
-      radial-gradient(720px 460px at 102% 0%, rgba(214, 181, 124, 0.06), transparent 58%),
-      linear-gradient(180deg, #0e1712 0%, var(--pp-bg) 42%);
+      radial-gradient(880px 460px at 8% -10%, rgba(74, 158, 255, 0.12), transparent 62%),
+      radial-gradient(720px 460px at 102% 0%, rgba(0, 156, 222, 0.08), transparent 58%),
+      linear-gradient(180deg, #0d1625 0%, var(--pp-bg) 42%);
   }
 
   .pp-pay-btn,
   .pp-btn--primary,
-  .pp-composer__send {
-    color: #0c1411;
+  .pp-composer__send,
+  .pp-mark {
+    color: #0b1220;
   }
 
   .pp-stub__mark,
-  .pp-mark,
   .pp-chat__avatar,
   .pp-msg__avatar--agent,
   .pp-offers__icon {

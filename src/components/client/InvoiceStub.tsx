@@ -99,6 +99,9 @@ export default function InvoiceStub({
   const status = getStatus(invoice, demoNow);
   const now = new Date(demoNow);
   const stage = stageFor(invoice);
+  const payLabel = payable
+    ? `Pay ${formatMoney(payable.amount, payable.currency)} with PayPal`
+    : null;
   const amountLabel =
     invoice.status === 'PAID'
       ? 'Amount paid'
@@ -133,28 +136,23 @@ export default function InvoiceStub({
         <p className="pp-stub__status-detail">{status.detail}</p>
       </div>
 
-      {payable ? (
+      {payable && payLabel ? (
         <div className="pp-stub__pay">
           <a
             className="pp-pay-btn"
             href={payable.payerLink}
             target="_blank"
             rel="noreferrer"
-            aria-label={
-              payable.kind === 'installment'
-                ? `Pay installment ${payable.installmentNumber ?? ''} in PayPal`
-                : `Pay ${formatMoney(payable.amount, payable.currency)} in PayPal`
-            }
+            aria-label={payLabel}
           >
             <WalletIcon width={18} height={18} />
-            <span>
-              {payable.kind === 'installment'
-                ? `Pay installment ${payable.installmentNumber ?? ''}`
-                : `Pay ${formatMoney(payable.amount, payable.currency)} in PayPal`}
-            </span>
+            <span>{payLabel}</span>
             <ArrowUpRightIcon width={15} height={15} />
           </a>
           <p className="pp-stub__pay-note">
+            {payable.kind === 'installment'
+              ? `Installment ${payable.installmentNumber ?? ''} · `
+              : ''}
             You&apos;ll be redirected to PayPal to complete payment.
           </p>
         </div>

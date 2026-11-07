@@ -1,44 +1,43 @@
 /* ============================================================
    PulsePay — shared client + owner theme
-   "Quiet ledger": porcelain canvas, evergreen actions, soft
-   sage and stone surfaces. Tokens are shared by /c/[token] and
-   /approvals so the two sides feel like one product.
+   PayPal-clean: white surfaces, PayPal blues, quiet gray
+   supporting tones, and minimal elevation. Shared by
+   /c/[token] and /approvals.
    ============================================================ */
 
 .pp-portal,
 .ap-root {
-  --pp-bg: #f3f5f1;
-  --pp-bg-deep: #e9ede7;
+  --pp-bg: #f5f7fa;
+  --pp-bg-deep: #edf1f7;
   --pp-surface: #ffffff;
-  --pp-surface-soft: #f8faf7;
-  --pp-surface-muted: #f1f4f0;
-  --pp-ink: #17231e;
-  --pp-ink-soft: #5c6b62;
-  --pp-ink-faint: #68766e;
-  --pp-line: #e4eae4;
-  --pp-line-strong: #d0dad2;
-  --pp-primary: #1f5a47;
-  --pp-primary-strong: #143f32;
-  --pp-primary-soft: #e9f2ed;
-  --pp-primary-tint: #f2f8f4;
-  --pp-brass: #b08a4f;
-  --pp-brass-soft: #f6f0e4;
-  --pp-recovered: #2b7a58;
-  --pp-recovered-soft: #e8f4ed;
-  --pp-due: #8a5e26;
-  --pp-due-soft: #f7f0e2;
-  --pp-overdue: #a24e43;
-  --pp-overdue-soft: #f8ece9;
-  --pp-approval: #8a5e26;
-  --pp-approval-soft: #f7f0e2;
-  --pp-owner: #355a6b;
-  --pp-owner-soft: #edf3f6;
-  --pp-client-bubble: #f4f1eb;
-  --pp-shadow-sm: 0 1px 2px rgba(23, 35, 30, 0.04);
-  --pp-shadow-md: 0 18px 40px -30px rgba(23, 35, 30, 0.24);
-  --pp-shadow-lg: 0 30px 70px -38px rgba(23, 35, 30, 0.3);
-  --pp-radius: 24px;
-  --pp-radius-sm: 14px;
+  --pp-surface-soft: #f7f9fc;
+  --pp-surface-muted: #eef2f7;
+  --pp-ink: #001435;
+  --pp-ink-soft: #5b6670;
+  --pp-ink-faint: #6c7378;
+  --pp-line: #e2e8f0;
+  --pp-line-strong: #cbd5e1;
+  --pp-primary: #0070ba;
+  --pp-primary-strong: #005ea6;
+  --pp-primary-soft: #eaf3fb;
+  --pp-primary-tint: #f3f8fd;
+  --pp-accent: #009cde;
+  --pp-recovered: #007a3d;
+  --pp-recovered-soft: #e8f5ee;
+  --pp-due: #9a5b00;
+  --pp-due-soft: #fff4e5;
+  --pp-overdue: #b42318;
+  --pp-overdue-soft: #fdecea;
+  --pp-approval: #9a5b00;
+  --pp-approval-soft: #fff4e5;
+  --pp-owner: #003087;
+  --pp-owner-soft: #eaf0f9;
+  --pp-client-bubble: #f2f5f9;
+  --pp-shadow-sm: 0 1px 2px rgba(0, 20, 53, 0.05);
+  --pp-shadow-md: 0 10px 28px -22px rgba(0, 20, 53, 0.22);
+  --pp-shadow-lg: 0 24px 56px -34px rgba(0, 20, 53, 0.28);
+  --pp-radius: 14px;
+  --pp-radius-sm: 10px;
   --pp-font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   position: relative;
@@ -97,36 +96,35 @@
 @media (prefers-color-scheme: dark) {
   .pp-portal,
   .ap-root {
-    --pp-bg: #0c1411;
-    --pp-bg-deep: #0a110e;
-    --pp-surface: #121c17;
-    --pp-surface-soft: #0f1814;
-    --pp-surface-muted: #16221c;
-    --pp-ink: #e8efea;
-    --pp-ink-soft: #a7b5ac;
-    --pp-ink-faint: #8f9e95;
-    --pp-line: #223029;
-    --pp-line-strong: #2d3d34;
-    --pp-primary: #7ec9a6;
-    --pp-primary-strong: #9adbb9;
-    --pp-primary-soft: #16281f;
-    --pp-primary-tint: #101d17;
-    --pp-brass: #d6b57c;
-    --pp-brass-soft: #2a2316;
-    --pp-recovered: #7ec9a6;
-    --pp-recovered-soft: #12251b;
-    --pp-due: #d6b57c;
-    --pp-due-soft: #2a2316;
-    --pp-overdue: #e59a90;
-    --pp-overdue-soft: #2a1917;
-    --pp-approval: #d6b57c;
-    --pp-approval-soft: #2a2316;
-    --pp-owner: #9cc3d4;
-    --pp-owner-soft: #17262d;
-    --pp-client-bubble: #1a2620;
-    --pp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-    --pp-shadow-md: 0 18px 48px -30px rgba(0, 0, 0, 0.9);
-    --pp-shadow-lg: 0 30px 80px -38px rgba(0, 0, 0, 0.95);
+    --pp-bg: #0b1220;
+    --pp-bg-deep: #09101c;
+    --pp-surface: #111a2c;
+    --pp-surface-soft: #0f1828;
+    --pp-surface-muted: #16223a;
+    --pp-ink: #e6edf5;
+    --pp-ink-soft: #a9b7c9;
+    --pp-ink-faint: #8fa1b8;
+    --pp-line: #22304a;
+    --pp-line-strong: #31415d;
+    --pp-primary: #4a9eff;
+    --pp-primary-strong: #7bbcff;
+    --pp-primary-soft: #13233a;
+    --pp-primary-tint: #0f1c2e;
+    --pp-accent: #55b8f5;
+    --pp-recovered: #4ade80;
+    --pp-recovered-soft: #102a1c;
+    --pp-due: #f5b942;
+    --pp-due-soft: #2a2212;
+    --pp-overdue: #ff8a80;
+    --pp-overdue-soft: #2a1717;
+    --pp-approval: #f5b942;
+    --pp-approval-soft: #2a2212;
+    --pp-owner: #9cc3ff;
+    --pp-owner-soft: #15243b;
+    --pp-client-bubble: #1a2638;
+    --pp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --pp-shadow-md: 0 16px 40px -28px rgba(0, 0, 0, 0.9);
+    --pp-shadow-lg: 0 26px 64px -34px rgba(0, 0, 0, 0.95);
   }
 }
 
