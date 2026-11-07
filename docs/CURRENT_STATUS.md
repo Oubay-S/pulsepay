@@ -161,7 +161,7 @@ npm run build
   - Approve, reject with a reason, and counter with a discount or an installment plan.
   - Counter-offers are validated before they become client-facing proposals.
 - **Shared visual system**: `src/app/pulsepay-theme.css`
-  - Quiet-ledger palette: porcelain canvas, evergreen actions, sage and stone surfaces.
+  - PayPal-inspired white-and-blue palette: white cards, PayPal blue actions, a light blue-gray canvas, pill buttons, and minimal elevation.
   - Shared by the client portal and approvals so the two sides feel like one product.
 
 ### New libraries
