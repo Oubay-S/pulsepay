@@ -7,7 +7,7 @@ import {
   ALL_TOOLS_ENABLED,
   PayPalAgentToolkit,
 } from '@paypal/agent-toolkit/openai';
-import type { PayPalInvoice } from '@/types/paypal';
+import type { PayPalInvoice, PayPalOrderResponse } from '@/types/paypal';
 
 const PAYPAL_API_BASE =
   process.env.PAYPAL_ENVIRONMENT === 'production'
@@ -471,4 +471,94 @@ export async function recordInvoicePayment(
       `Failed to record payment on ${invoiceId}: ${res.status} ${await res.text()}`
     );
   }
+}
+
+// ------------------------------------------------------------
+// Orders v2 (Pay Later checkout)
+// ------------------------------------------------------------
+
+/**
+ * Creates an Orders v2 order.
+ *
+ * Callers must put the PulsePay invoice UUID in
+ * `purchase_units[0].custom_id`; the capture webhook uses it to map the
+ * payment back to the invoice.
+ */
+export async function createPayPalOrder(
+  payload: Record<string, unknown>,
+  requestId?: string
+): Promise<PayPalOrderResponse> {
+  const token = await getPayPalAccessToken();
+
+  const res = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...(requestId ? { 'PayPal-Request-Id': requestId } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(
+      `Failed to create PayPal order: ${res.status} ${await res.text()}`
+    );
+  }
+
+  return (await res.json()) as PayPalOrderResponse;
+}
+
+/** Fetches an order, including its current status and purchase units. */
+export async function getPayPalOrder(
+  orderId: string
+): Promise<PayPalOrderResponse> {
+  const token = await getPayPalAccessToken();
+
+  const res = await fetch(
+    `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(orderId)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(
+      `Failed to fetch PayPal order ${orderId}: ${res.status} ${await res.text()}`
+    );
+  }
+
+  return (await res.json()) as PayPalOrderResponse;
+}
+
+/** Captures an approved order. */
+export async function capturePayPalOrder(
+  orderId: string,
+  requestId?: string
+): Promise<PayPalOrderResponse> {
+  const token = await getPayPalAccessToken();
+
+  const res = await fetch(
+    `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...(requestId ? { 'PayPal-Request-Id': requestId } : {}),
+      },
+      body: JSON.stringify({}),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(
+      `Failed to capture PayPal order ${orderId}: ${res.status} ${await res.text()}`
+    );
+  }
+
+  return (await res.json()) as PayPalOrderResponse;
 }

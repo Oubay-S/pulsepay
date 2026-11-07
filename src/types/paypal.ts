@@ -128,6 +128,45 @@ export interface PayPalOrder {
   links?: PayPalLink[];
 }
 
+/**
+ * Orders v2 create/capture response. The fields are optional because PayPal
+ * returns a different subset for create, get, and capture.
+ */
+export interface PayPalOrderResponse {
+  id: string;
+  status: string;
+  intent?: string;
+  purchase_units?: Array<{
+    reference_id?: string;
+    custom_id?: string;
+    description?: string;
+    amount?: {
+      currency_code: string;
+      value: string;
+    };
+    payments?: {
+      captures?: Array<{
+        id: string;
+        status: string;
+        custom_id?: string;
+        amount: {
+          currency_code: string;
+          value: string;
+        };
+      }>;
+    };
+  }>;
+  payer?: {
+    email_address?: string;
+    payer_id?: string;
+    name?: {
+      given_name?: string;
+      surname?: string;
+    };
+  };
+  links?: PayPalLink[];
+}
+
 // ---------- Conditional Rules ----------
 
 export interface PayPalConditionalRule {

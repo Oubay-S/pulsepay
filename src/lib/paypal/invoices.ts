@@ -9,6 +9,32 @@
 
 import { createPayPalInvoice, sendPayPalInvoiceWithLink } from './toolkit';
 
+/**
+ * Marker used on every invoice PulsePay creates for the demo seed. Sync uses
+ * it to tell seed invoices apart from real merchant invoices, so a database
+ * reset never resurrects an old demo invoice.
+ */
+export const PULSEPAY_DEMO_MARKER = '[PulsePay demo]';
+
+/**
+ * Notes written by PulsePay tooling (seed, verification scripts, executor).
+ * An invoice carrying one of these notes is never imported by sync unless
+ * PulsePay already tracks it.
+ */
+const PULSEPAY_NOTE_PATTERNS = [
+  /\[PulsePay demo\]/i,
+  /\[PulsePay verification\]/i,
+  /PulsePay Phase 0/i,
+  /^Discounted invoice( for| \()/i,
+  /^Installment( \d+)? for PayPal invoice/i,
+];
+
+/** True when a PayPal invoice note was written by PulsePay tooling. */
+export function isPulsePayGeneratedNote(note: string | undefined): boolean {
+  if (!note) return false;
+  return PULSEPAY_NOTE_PATTERNS.some((pattern) => pattern.test(note));
+}
+
 export interface InvoiceDraft {
   businessName: string;
   clientName: string;

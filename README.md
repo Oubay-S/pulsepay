@@ -114,6 +114,43 @@ Visit `http://localhost:3000` for the dashboard and `http://localhost:3000/api/h
 
 ---
 
+## PayPal Sandbox (Judges)
+
+All PayPal activity in PulsePay is **real** and runs in **PayPal Sandbox**:
+
+- invoices are created, sent, and cancelled through **Invoicing v2**
+- discounts, installment plans, and Pay Later use real PayPal APIs
+- payments are confirmed by verified PayPal webhooks
+- only the demo clock is simulated
+
+### Sandbox buyer
+
+| Field | Value |
+|---|---|
+| Email | `sb-seg43053775887@personal.example.com` |
+| Password | `b@1^!qB0` |
+| Region | **US** — required for the Pay Later flow |
+
+> Sandbox test account only — no real money, no real cards.
+
+### What to try
+
+1. Open the demo and pick an unpaid invoice.
+2. Accept the early-payment discount → pay the reissued invoice with the Sandbox buyer → the invoice turns `PAID`.
+3. Accept the 3-installment plan → installment 1 is sent → advance the demo clock → installment 2 is sent.
+4. Choose **Pay Later** → log in as the US buyer → approve **Pay in 4** → the invoice turns `PAID`.
+5. Watch the dashboard row turn green after the webhook arrives.
+
+PayPal webhook endpoint:
+
+```
+https://pulsepay-rho.vercel.app/api/paypal/webhook
+```
+
+Pay Later appears only for eligible Sandbox buyers; it is shown honestly as “if PayPal offers it to you.”
+
+---
+
 ## API Reference
 
 ### Infrastructure & Demo

@@ -242,6 +242,132 @@ async function main(): Promise<void> {
       `status=${captureResponse.status} invoice=${capturedInvoice?.status}`
     );
 
+    // ---------- Partial payment does not close the invoice ----------
+    const { data: partialInvoice } = await supabase
+      .from('invoices')
+      .insert({
+        business_id: business.id,
+        client_id: client!.id,
+        paypal_invoice_id: `INV2-PARTIAL-${suffix}`,
+        amount: 500,
+        currency: 'USD',
+        due_date: new Date().toISOString(),
+        status: 'SENT',
+        priority_score: 55,
+        priority_reason: 'Partial verification',
+        description: 'Partial payment verification invoice',
+      })
+      .select()
+      .single();
+
+    const partialConversationResponse = await supabase
+      .from('conversations')
+      .insert({
+        invoice_id: partialInvoice!.id,
+        token: `partial-${suffix}`,
+        status: 'ACTIVE',
+      })
+      .select()
+      .single();
+
+    const partialEventId = `WH-PARTIAL-${suffix}`;
+    const partialResponse = await POST(
+      new NextRequest('http://localhost/api/paypal/webhook', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(
+          makeEvent(partialEventId, 'INVOICING.INVOICE.PAID', {
+            id: partialInvoice!.paypal_invoice_id,
+            status: 'PARTIALLY_PAID',
+            amount: { currency_code: 'USD', value: '500.00' },
+            payments: {
+              paid_amount: { currency_code: 'USD', value: '200.00' },
+            },
+          })
+        ),
+      })
+    );
+
+    const { data: partialAfter } = await supabase
+      .from('invoices')
+      .select('status')
+      .eq('id', partialInvoice!.id)
+      .single();
+
+    const { data: partialConversationAfter } = await supabase
+      .from('conversations')
+      .select('status')
+      .eq('id', partialConversationResponse.data!.id)
+      .single();
+
+    check(
+      'Partial payment keeps invoice PARTIALLY_PAID',
+      partialResponse.status === 200 && partialAfter?.status === 'PARTIALLY_PAID',
+      `status=${partialResponse.status} invoice=${partialAfter?.status}`
+    );
+
+    check(
+      'Partial payment does not resolve the conversation',
+      partialConversationAfter?.status === 'ACTIVE',
+      `conversation=${partialConversationAfter?.status}`
+    );
+
+    const { data: partialEvents } = await supabase
+      .from('events')
+      .select('id')
+      .eq('type', 'PAYMENT_PARTIALLY_RECEIVED')
+      .filter('payload->>event_id', 'eq', partialEventId);
+
+    check(
+      'Partial payment is logged distinctly',
+      (partialEvents?.length ?? 0) === 1,
+      `PAYMENT_PARTIALLY_RECEIVED rows=${partialEvents?.length ?? 0}`
+    );
+
+    // ---------- Cancelling a SUPERSEDED invoice keeps PulsePay's status ----------
+    const { data: supersededInvoice } = await supabase
+      .from('invoices')
+      .insert({
+        business_id: business.id,
+        client_id: client!.id,
+        paypal_invoice_id: `INV2-SUPERSEDED-${suffix}`,
+        amount: 400,
+        currency: 'USD',
+        due_date: new Date().toISOString(),
+        status: 'SUPERSEDED',
+        priority_score: 0,
+        priority_reason: 'Superseded verification',
+        description: 'Superseded cancel verification invoice',
+      })
+      .select()
+      .single();
+
+    const supersededEventId = `WH-SUPERSEDED-${suffix}`;
+    await POST(
+      new NextRequest('http://localhost/api/paypal/webhook', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(
+          makeEvent(supersededEventId, 'INVOICING.INVOICE.CANCELLED', {
+            id: supersededInvoice!.paypal_invoice_id,
+            status: 'CANCELLED',
+          })
+        ),
+      })
+    );
+
+    const { data: supersededAfter } = await supabase
+      .from('invoices')
+      .select('status')
+      .eq('id', supersededInvoice!.id)
+      .single();
+
+    check(
+      'Cancel event preserves SUPERSEDED status',
+      supersededAfter?.status === 'SUPERSEDED',
+      `status=${supersededAfter?.status}`
+    );
+
     // ---------- Unsigned request is rejected ----------
     process.env.PAYPAL_WEBHOOK_SKIP_VERIFY = 'false';
 
@@ -269,6 +395,8 @@ async function main(): Promise<void> {
       .in('paypal_event_id', [
         paidEventId,
         captureEventId,
+        `WH-PARTIAL-${suffix}`,
+        `WH-SUPERSEDED-${suffix}`,
         `WH-UNSIGNED-${suffix}`,
       ]);
     await supabase.from('businesses').delete().eq('id', business.id);

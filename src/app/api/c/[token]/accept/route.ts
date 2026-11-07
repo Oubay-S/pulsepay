@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { executeAgreement } from '@/lib/paypal/executor';
+import { resolvePayableInvoice } from '@/lib/paypal/payer';
 import type { NegotiationProposal } from '@/types/proposals';
+
+// The executor creates, sends, and cancels real PayPal invoices.
+export const maxDuration = 60;
 
 export async function POST(
   req: NextRequest,
@@ -80,10 +84,35 @@ export async function POST(
       intent: 'ARRANGEMENT_ACCEPTED',
     });
 
+    // A discount moves the conversation to the reissued invoice; a plan keeps
+    // it on the superseded parent. Resolve the real payable target either way.
+    const { data: refreshedConversation } = await supabase
+      .from('conversations')
+      .select('invoice:invoices(*)')
+      .eq('id', conversation.id)
+      .single();
+
+    const refreshedInvoice = refreshedConversation?.invoice
+      ? Array.isArray(refreshedConversation.invoice)
+        ? refreshedConversation.invoice[0]
+        : refreshedConversation.invoice
+      : null;
+
+    const payable = refreshedInvoice
+      ? await resolvePayableInvoice(supabase, refreshedInvoice)
+      : null;
+
+    const executionPayerLink =
+      typeof executionResult.details?.payerLink === 'string'
+        ? executionResult.details.payerLink
+        : null;
+
     return NextResponse.json({
       success: true,
       arrangement: updatedArrangement,
       execution: executionResult,
+      payable,
+      payer_link: payable?.payer_link ?? executionPayerLink,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { executeAgreement } from '@/lib/paypal/executor';
+import { resolvePayableInvoice } from '@/lib/paypal/payer';
 import type { NegotiationProposal } from '@/types/proposals';
+
+// The executor creates, sends, and cancels real PayPal invoices.
+export const maxDuration = 60;
 
 export async function POST(
   req: NextRequest,
@@ -68,7 +72,34 @@ export async function POST(
         });
       }
 
-      return NextResponse.json({ success: true, arrangement: updatedArr, execution: executionResult });
+      // A discount creates a reissued child invoice; a plan keeps the
+      // superseded parent and sends installment 1.
+      const { data: childInvoice } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('parent_invoice_id', invoice.paypal_invoice_id)
+        .neq('status', 'CANCELLED')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const payable = await resolvePayableInvoice(
+        supabase,
+        childInvoice ?? invoice
+      );
+
+      const executionPayerLink =
+        typeof executionResult.details?.payerLink === 'string'
+          ? executionResult.details.payerLink
+          : null;
+
+      return NextResponse.json({
+        success: true,
+        arrangement: updatedArr,
+        execution: executionResult,
+        payable,
+        payer_link: payable?.payer_link ?? executionPayerLink,
+      });
     }
 
     if (action === 'reject') {

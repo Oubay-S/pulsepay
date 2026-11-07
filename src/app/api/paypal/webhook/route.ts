@@ -4,6 +4,9 @@ import { verifyWebhookSignature } from '@/lib/paypal/webhooks';
 import type { PayPalWebhookEvent } from '@/types/paypal';
 import type { InvoiceStatus } from '@/types/database';
 
+// Signature verification calls PayPal, then the handler writes to Supabase.
+export const maxDuration = 30;
+
 type Supabase = ReturnType<typeof createAdminClient>;
 
 const UUID_RE =
@@ -127,13 +130,20 @@ async function maybeCompletePlan(
 /**
  * Marks an invoice (or one of its installments) paid and resolves the plan
  * when the last installment clears.
+ *
+ * PayPal sends `INVOICING.INVOICE.PAID` for partial payments too, so the
+ * caller classifies the payment as `full` or `partial` from the resource
+ * status/amounts. A partial payment must never resolve a conversation or
+ * close an installment.
  */
 async function markPaypalInvoicePaid(
   supabase: Supabase,
   paypalInvoiceId: string,
-  event: PayPalWebhookEvent
+  event: PayPalWebhookEvent,
+  mode: 'full' | 'partial' = 'full'
 ): Promise<void> {
   const paidAt = new Date().toISOString();
+  const isPartial = mode === 'partial';
 
   const { data: invoice, error: invoiceError } = await supabase
     .from('invoices')
@@ -145,7 +155,7 @@ async function markPaypalInvoicePaid(
     throw new Error(`Failed to load invoice ${paypalInvoiceId}: ${invoiceError.message}`);
   }
 
-  if (invoice && invoice.status !== 'PAID') {
+  if (invoice && !isPartial && invoice.status !== 'PAID') {
     const { error } = await supabase
       .from('invoices')
       .update({
@@ -161,6 +171,28 @@ async function markPaypalInvoicePaid(
     }
   }
 
+  if (
+    invoice &&
+    isPartial &&
+    invoice.status !== 'PAID' &&
+    invoice.status !== 'SUPERSEDED'
+  ) {
+    const { error } = await supabase
+      .from('invoices')
+      .update({
+        status: 'PARTIALLY_PAID',
+        priority_reason: 'Partially paid via PayPal',
+        synced_at: paidAt,
+      })
+      .eq('id', invoice.id);
+
+    if (error) {
+      throw new Error(
+        `Failed to mark invoice ${paypalInvoiceId} partially paid: ${error.message}`
+      );
+    }
+  }
+
   const { data: installment, error: installmentError } = await supabase
     .from('installments')
     .select('id, arrangement_id, number')
@@ -173,7 +205,7 @@ async function markPaypalInvoicePaid(
     );
   }
 
-  if (installment) {
+  if (installment && !isPartial) {
     const { error } = await supabase
       .from('installments')
       .update({ status: 'PAID', paid_at: paidAt })
@@ -188,7 +220,7 @@ async function markPaypalInvoicePaid(
     await maybeCompletePlan(supabase, installment.arrangement_id);
   }
 
-  if (invoice) {
+  if (invoice && !isPartial) {
     await supabase
       .from('conversations')
       .update({ status: 'RESOLVED' })
@@ -200,13 +232,19 @@ async function markPaypalInvoicePaid(
   await logWebhookEvent(
     supabase,
     event,
-    matched ? 'PAYMENT_RECEIVED' : 'PAYMENT_RECEIVED_UNMATCHED',
+    !matched
+      ? 'PAYMENT_RECEIVED_UNMATCHED'
+      : isPartial
+        ? 'PAYMENT_PARTIALLY_RECEIVED'
+        : 'PAYMENT_RECEIVED',
     {
       paypal_invoice_id: paypalInvoiceId,
       invoice_id: invoice?.id ?? null,
       installment_id: installment?.id ?? null,
       amount: invoice?.amount ?? null,
       currency: invoice?.currency ?? null,
+      mode,
+      resource_status: asString(asRecord(event.resource).status) ?? null,
     },
     invoice
       ? { type: 'invoice', id: invoice.id }
@@ -230,7 +268,28 @@ async function handleInvoicePaid(
     return;
   }
 
-  await markPaypalInvoicePaid(supabase, paypalInvoiceId, event);
+  // PayPal fires INVOICING.INVOICE.PAID for partial payments as well. Trust
+  // the resource status first, then fall back to comparing paid vs total.
+  const resourceStatus = asString(resource.status);
+  const paidAmount = Number(
+    asString(asRecord(asRecord(resource.payments).paid_amount).value)
+  );
+  const totalAmount = Number(asString(asRecord(resource.amount).value));
+
+  const isPartial =
+    resourceStatus === 'PARTIALLY_PAID' ||
+    resourceStatus === 'PARTIALLY_REFUNDED' ||
+    (Number.isFinite(paidAmount) &&
+      Number.isFinite(totalAmount) &&
+      paidAmount > 0 &&
+      paidAmount < totalAmount);
+
+  await markPaypalInvoicePaid(
+    supabase,
+    paypalInvoiceId,
+    event,
+    isPartial ? 'partial' : 'full'
+  );
 }
 
 async function handleInvoiceCancelled(
@@ -245,7 +304,7 @@ async function handleInvoiceCancelled(
   if (paypalInvoiceId) {
     const { data: invoice, error } = await supabase
       .from('invoices')
-      .select('id')
+      .select('id, status')
       .eq('paypal_invoice_id', paypalInvoiceId)
       .maybeSingle();
 
@@ -255,13 +314,18 @@ async function handleInvoiceCancelled(
 
     if (invoice) {
       entityId = invoice.id;
-      const { error: updateError } = await supabase
-        .from('invoices')
-        .update({ status: 'CANCELLED', synced_at: new Date().toISOString() })
-        .eq('id', invoice.id);
 
-      if (updateError) {
-        throw new Error(`Failed to mark invoice cancelled: ${updateError.message}`);
+      // SUPERSEDED is PulsePay's record of why the invoice was cancelled
+      // (discount or plan). PayPal's CANCELLED must not overwrite it.
+      if (invoice.status !== 'SUPERSEDED') {
+        const { error: updateError } = await supabase
+          .from('invoices')
+          .update({ status: 'CANCELLED', synced_at: new Date().toISOString() })
+          .eq('id', invoice.id);
+
+        if (updateError) {
+          throw new Error(`Failed to mark invoice cancelled: ${updateError.message}`);
+        }
       }
     }
   }
@@ -365,7 +429,11 @@ async function handleInvoiceUpdated(
   };
 
   const mappedStatus = mapPayPalStatus(asString(resource.status));
-  if (mappedStatus && existing.status !== 'PAID') {
+  if (
+    mappedStatus &&
+    existing.status !== 'PAID' &&
+    existing.status !== 'SUPERSEDED'
+  ) {
     updates.status = mappedStatus;
   }
 

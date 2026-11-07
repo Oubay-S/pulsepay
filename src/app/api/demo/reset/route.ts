@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { resetAndSeedDatabase } from '@/lib/seed';
 
+// Seeding creates nine real PayPal invoices, which takes 15–22 seconds.
+export const maxDuration = 60;
+
 export async function POST() {
   try {
     const result = await resetAndSeedDatabase();
