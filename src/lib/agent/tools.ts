@@ -1,6 +1,8 @@
 // Tools the LLM may call. None of them move money: proposals go through the
 // policy guard, escalations go to the owner's approval queue.
 // Invoice and client facts are given in the system prompt, so no read tools are needed.
+// Tool use is forced and each call carries the client-facing "message", because some
+// models otherwise write text OR call a tool, never both (see llm.ts).
 
 export interface ToolDefinition {
   name: string;
@@ -12,7 +14,14 @@ export interface ToolDefinition {
   };
 }
 
+const message = { type: 'string', description: 'What the client will read. Describe any offer in plain words.' };
+
 export const AGENT_TOOLS: ToolDefinition[] = [
+  {
+    name: 'reply',
+    description: 'Answer the client in plain text when no offer, escalation or dispute is needed',
+    parameters: { type: 'object', properties: { message }, required: ['message'] },
+  },
   {
     name: 'propose_offer',
     description: 'Propose one arrangement to the client: early-payment discount, installment plan, or PayPal Pay Later',
@@ -49,6 +58,7 @@ export const AGENT_TOOLS: ToolDefinition[] = [
           type: 'number',
           description: 'If pay_later: original total amount',
         },
+        message,
       },
       required: ['type'],
     },
@@ -59,9 +69,10 @@ export const AGENT_TOOLS: ToolDefinition[] = [
     parameters: {
       type: 'object',
       properties: {
-        reason: { type: 'string', description: 'What the client asked for and why it needs the owner' },
+        reason: { type: 'string', description: 'For the owner: what the client asked for and why it needs them' },
+        message,
       },
-      required: ['reason'],
+      required: ['reason', 'message'],
     },
   },
   {
@@ -70,9 +81,10 @@ export const AGENT_TOOLS: ToolDefinition[] = [
     parameters: {
       type: 'object',
       properties: {
-        reason: { type: 'string', description: 'Client concerns regarding deliverables or service' },
+        reason: { type: 'string', description: 'For the owner: client concerns regarding deliverables or service' },
+        message,
       },
-      required: ['reason'],
+      required: ['reason', 'message'],
     },
   },
 ];

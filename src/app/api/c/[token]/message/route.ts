@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { detectIntent } from '@/lib/agent/intent-gate';
-import { callLLM } from '@/lib/llm';
+import { callLLM, TOOL_REPLIES } from '@/lib/llm';
 import { AGENT_TOOLS } from '@/lib/agent/tools';
 import { buildNegotiationPrompt } from '@/lib/agent/prompt';
 import { getDemoNow } from '@/lib/demo-clock';
@@ -166,15 +166,9 @@ export async function POST(
       invoiceAmount: invoice.amount,
     });
 
-    // Save assistant message
-    await supabase.from('messages').insert({
-      conversation_id: conversation.id,
-      sender: 'AGENT',
-      content: llmResponse.content,
-      intent: intentResult.intent,
-    });
-
-    // 5. Process any structured proposals emitted
+    // 5. Process any structured proposals emitted. The reply is saved after this,
+    // because a guard rejection must also replace the model's text (it may promise the rejected offer).
+    let agentText = llmResponse.content;
     const createdOffers = [];
     if (llmResponse.toolCalls) {
       for (const call of llmResponse.toolCalls) {
@@ -212,10 +206,30 @@ export async function POST(
             if (newArrangement) {
               createdOffers.push(newArrangement);
             }
+          } else {
+            // Out-of-policy offer: never show it, send the request to the owner instead.
+            await supabase.from('arrangements').insert({
+              invoice_id: invoice.id,
+              conversation_id: conversation.id,
+              type: 'DISCOUNT',
+              terms: {
+                reason: `Assistant proposal blocked by policy guard: ${'reason' in guardResult ? guardResult.reason : 'invalid'}`,
+                requested_discount_pct: proposalCandidate.discount_pct,
+              },
+              status: 'PENDING_APPROVAL',
+            });
+            agentText = TOOL_REPLIES.escalate;
           }
         }
       }
     }
+
+    await supabase.from('messages').insert({
+      conversation_id: conversation.id,
+      sender: 'AGENT',
+      content: agentText,
+      intent: intentResult.intent,
+    });
 
     // Return full updated message list & offers
     const { data: allMessages } = await supabase

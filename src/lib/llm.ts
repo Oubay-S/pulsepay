@@ -26,7 +26,8 @@ interface LLMOptions {
   invoiceAmount?: number; // lets the demo cache build a plan that passes the policy guard
 }
 
-const DEFAULT_REPLY = 'Thanks for your message. Let me look at the options we can offer you.';
+// Shown when no model answered: must not promise anything that won't follow.
+const DEFAULT_REPLY = "Thanks for your message. I've noted it, and the business owner will follow up here if needed.";
 
 // Some models (e.g. gpt-oss) return tool calls with no text; the client still needs a message.
 export const TOOL_REPLIES: Record<string, string> = {
@@ -45,7 +46,20 @@ export async function callLLM(options: LLMOptions): Promise<LLMResponse> {
   for (const { name, key, call } of providers) {
     if (!key) continue;
     try {
-      const { content, toolCalls } = await call(key, options);
+      const raw = await call(key, options);
+      raw.toolCalls.forEach(numberInstallments);
+
+      // Tool use is forced (see tools.ts): the client text arrives in each call's "message".
+      const messages = new Set<string>();
+      for (const c of raw.toolCalls) {
+        const m = c.arguments.message;
+        if (typeof m === 'string' && m.trim()) messages.add(m.trim());
+        delete c.arguments.message;
+      }
+      const toolCalls = raw.toolCalls.filter((c) => c.name !== 'reply');
+      // Each message is meant as the whole reply; models sometimes repeat it per call, so keep the first.
+      const content = raw.content || [...messages][0] || '';
+
       if (!content && !toolCalls.length) throw new Error('empty response');
       return {
         content: content || TOOL_REPLIES[toolCalls[0]?.name] || DEFAULT_REPLY,
@@ -73,6 +87,7 @@ async function callGemini(key: string, { messages, tools, temperature }: LLMOpti
         .filter((m) => m.role !== 'system')
         .map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
       tools: tools?.length ? [{ functionDeclarations: tools }] : undefined,
+      toolConfig: tools?.length ? { functionCallingConfig: { mode: 'ANY' } } : undefined,
       // Gemini 3.x thinks before answering (default "medium"); "low" keeps chat replies fast.
       generationConfig: { temperature: temperature ?? 0.3, thinkingConfig: { thinkingLevel: 'low' } },
     }
@@ -96,6 +111,7 @@ async function callGroq(key: string, { messages, tools, temperature }: LLMOption
       model: process.env.LLM_FALLBACK_MODEL || 'openai/gpt-oss-120b',
       messages,
       tools: tools?.map((t) => ({ type: 'function', function: t })),
+      tool_choice: tools?.length ? 'required' : undefined,
       temperature: temperature ?? 0.3,
     }
   );
@@ -111,6 +127,16 @@ async function callGroq(key: string, { messages, tools, temperature }: LLMOption
     }
   }
   return { content: (message.content ?? '').trim(), toolCalls };
+}
+
+// Models sometimes drop installment numbers; they follow from list order, so fill them in.
+// Amounts and dates are left alone for the policy guard to check.
+function numberInstallments(call: LLMToolCall) {
+  const { installments } = call.arguments;
+  if (!Array.isArray(installments)) return;
+  call.arguments.installments = installments.map((item, i) =>
+    item && typeof item === 'object' ? { ...item, number: i + 1 } : item
+  );
 }
 
 // One retry on rate limit / overload (Gemini 503s under load), with a timeout so a
@@ -153,7 +179,7 @@ function demoCache({ messages, invoiceAmount }: LLMOptions): LLMResponse | null 
       providerUsed: 'cache',
     };
   }
-  if (/\d+ ?%|discount/.test(last)) {
+  if (/\d+ ?%|discount|waive/.test(last)) {
     return {
       content: TOOL_REPLIES.escalate,
       toolCalls: [{ name: 'escalate', arguments: { reason: `Client requested: "${last.slice(0, 200)}"` } }],
