@@ -3,7 +3,7 @@
 // Usage: npx tsx --env-file=.env.local scripts/test-llm.ts
 import { callLLM, TOOL_REPLIES, type LLMMessage } from '../src/lib/llm';
 import { AGENT_TOOLS } from '../src/lib/agent/tools';
-import { buildNegotiationPrompt } from '../src/lib/agent/prompt';
+import { buildFollowUpPrompt, buildNegotiationPrompt } from '../src/lib/agent/prompt';
 import { detectIntent } from '../src/lib/agent/intent-gate';
 import { checkPolicy } from '../src/lib/guard/policy-guard';
 import type { BusinessRow, ClientRow, InvoiceRow, PolicyRow } from '../src/types/database';
@@ -108,13 +108,59 @@ async function run(s: (typeof scenarios)[number], pass: string): Promise<boolean
   return !problems.length;
 }
 
+// First message (follow-up route): different lateness, history and tone.
+const followUps = [
+  { id: 'INV2-ELENA-001', name: 'Elena Rostova', on_time_rate: 90, days: 7, amount: 850, tone: 'friendly', what: 'Q3 Brand Guidelines' },
+  { id: 'INV2-MARCUS-002', name: 'Marcus Reed', on_time_rate: 65, days: 18, amount: 1200, tone: 'professional', what: null },
+  { id: 'INV2-SOLSTICE-006', name: 'Lucas Moreau', on_time_rate: 30, days: 68, amount: 1750, tone: 'brief', what: 'Telemetry Interface UI' },
+];
+
+async function runFollowUp(f: (typeof followUps)[number], pass: string): Promise<boolean> {
+  const inv = {
+    ...invoice,
+    paypal_invoice_id: f.id,
+    amount: f.amount,
+    description: f.what,
+    due_date: new Date(now.getTime() - f.days * 86_400_000).toISOString(),
+  } as InvoiceRow;
+  const prompt = buildFollowUpPrompt({
+    business: { ...business, tone: f.tone },
+    client: { ...client, name: f.name, on_time_rate: f.on_time_rate },
+    invoice: inv,
+    now,
+  });
+  const res = await callLLM({
+    messages: [
+      { role: 'system', content: prompt },
+      { role: 'user', content: 'Write the follow-up message.' },
+    ],
+  });
+  const text = res.content.replace(/,/g, '');
+  const problems: string[] = [];
+  if (!text.includes(f.name.split(' ')[0])) problems.push('missing first name');
+  if (!text.includes(String(f.amount))) problems.push('missing amount');
+  if (/%|https?:|\bfees?\b|penalt|legal|collection/i.test(text)) problems.push('discount, link, fee or threat');
+  if (!f.what && /\b(services?|design|project|deliverables?)\b/i.test(text)) problems.push('invented what the invoice was for');
+  console.log(
+    `${problems.length ? 'FAIL' : 'PASS'} [${pass}] follow-up ${f.name}, ${f.days}d late, ${f.tone} (${res.providerUsed}) ${problems.join(' | ')}`
+  );
+  console.log(`     agent: ${res.content}`);
+  return !problems.length;
+}
+
 async function main() {
   const results: boolean[] = [];
+  for (const f of followUps) results.push(await runFollowUp(f, 'gemini'));
   for (const s of scenarios) results.push(await run(s, 'gemini'));
   delete process.env.LLM_PRIMARY_API_KEY; // second pass: Groq fallback only
+  const pause = () => new Promise((r) => setTimeout(r, 12_000)); // Groq free tier: 8000 tokens/min
+  for (const f of followUps) {
+    results.push(await runFollowUp(f, 'groq'));
+    await pause();
+  }
   for (const s of scenarios) {
     results.push(await run(s, 'groq'));
-    await new Promise((r) => setTimeout(r, 12_000)); // Groq free tier: 8000 tokens/min, ~1300 per turn
+    await pause();
   }
 
   const failed = results.filter((ok) => !ok).length;

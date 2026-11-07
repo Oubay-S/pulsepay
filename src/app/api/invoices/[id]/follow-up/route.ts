@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { callLLM } from '@/lib/llm';
+import { buildFollowUpPrompt, followUpTemplate } from '@/lib/agent/prompt';
+import { getDemoNow } from '@/lib/demo-clock';
 import { sendFollowUpEmail } from '@/lib/email';
 import { nanoid } from 'nanoid';
 
@@ -28,14 +30,18 @@ export async function POST(
 
     const client = invoice.client;
     const business = invoice.business;
-    const tone = business?.tone || 'friendly';
 
-    // Check or create conversation
+    // Check or create conversation. Demo invoices can have an alias token too
+    // (e.g. demo-inv2-sarah-001), so .single() would fail and create a third one.
+    // ponytail: token order picks the primary demo token; store a primary flag if aliases grow.
     let { data: conversation } = await supabase
       .from('conversations')
       .select('*')
       .eq('invoice_id', id)
-      .single();
+      .order('created_at')
+      .order('token')
+      .limit(1)
+      .maybeSingle();
 
     if (!conversation) {
       const token = nanoid(12);
@@ -55,25 +61,21 @@ export async function POST(
       conversation = newConv;
     }
 
-    // Determine prompt context for LLM
-    const clientFirstName = client?.name?.split(' ')[0] || 'there';
-    const amount = Number(invoice.amount).toLocaleString();
-
-    const systemPrompt = `You are a polite, helpful assistant for ${business?.name || 'our business'}.
-Tone: ${tone}. Never sound like an aggressive debt collector.
-Goal: Inquire gently about overdue invoice #${invoice.paypal_invoice_id} ($${amount}) and offer to help or discuss flexible options.`;
-
     const llmResult = await callLLM({
       messages: [
-        { role: 'system', content: systemPrompt },
         {
-          role: 'user',
-          content: `Write a gentle 2-sentence follow-up to ${clientFirstName} regarding their invoice of $${amount}.`,
+          role: 'system',
+          content: buildFollowUpPrompt({ business, client, invoice, now: await getDemoNow() }),
         },
+        { role: 'user', content: 'Write the follow-up message.' },
       ],
     });
 
-    const followUpText = llmResult.content;
+    // The generic fallback reply makes no sense as a first message, so use a template instead.
+    const followUpText =
+      llmResult.providerUsed === 'primary' || llmResult.providerUsed === 'fallback'
+        ? llmResult.content
+        : followUpTemplate({ client, invoice });
 
     // Record message in conversation
     await supabase.from('messages').insert({

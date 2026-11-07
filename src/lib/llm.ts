@@ -57,7 +57,8 @@ export async function callLLM(options: LLMOptions): Promise<LLMResponse> {
         delete c.arguments.message;
       }
       const toolCalls = raw.toolCalls.filter((c) => c.name !== 'reply');
-      const content = raw.content || [...messages].join('\n\n');
+      // Each message is meant as the whole reply; models sometimes repeat it per call, so keep the first.
+      const content = raw.content || [...messages][0] || '';
 
       if (!content && !toolCalls.length) throw new Error('empty response');
       return {
