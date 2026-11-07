@@ -2,7 +2,7 @@
 
 Welcome to the **PulsePay** repository for the **PayPal AI Hackathon 2026**!
 
-## 🚀 Quick Setup
+## Quick Setup
 
 1. **Clone repository & checkout your branch**:
    ```bash
@@ -29,7 +29,7 @@ Welcome to the **PulsePay** repository for the **PayPal AI Hackathon 2026**!
 
 ---
 
-## 🌿 Branching & PR Rules
+## Branching & PR Rules
 
 - `main` is protected and always deployable.
 - Work on your dedicated feature branch:
@@ -46,7 +46,7 @@ Welcome to the **PulsePay** repository for the **PayPal AI Hackathon 2026**!
 
 ---
 
-## 📂 Architecture Map
+## Architecture Map
 
 - `src/types/` — **Shared TypeScript contracts**. Do not modify breaking changes without alignment.
 - `src/app/api/` — 12 pre-built Next.js Route Handlers.
