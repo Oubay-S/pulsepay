@@ -26,6 +26,13 @@ export function ApprovalCard({ approval, onActionComplete }: ApprovalCardProps) 
   const client = invoice?.client;
   const terms: any = approval.terms || {};
 
+  // Check if terms define an executable proposal rather than an unvalidated client demand
+  const isExecutable =
+    terms.type === "discount" ||
+    terms.type === "plan" ||
+    terms.type === "pay_later" ||
+    (terms.discount_percentage != null && !terms.requested_discount_pct);
+
   const handleAction = async (action: "approve" | "reject") => {
     try {
       setSubmitting(true);
@@ -83,6 +90,12 @@ export function ApprovalCard({ approval, onActionComplete }: ApprovalCardProps) 
             "{terms.reason || terms.reasoning}"
           </p>
         )}
+
+        {!isExecutable && (
+          <p className="text-[11px] text-[var(--pp-due)] font-medium pt-1 border-t border-[var(--pp-line)]">
+            Client requested custom terms exceeding policy. Requires counter-offer or rejection.
+          </p>
+        )}
       </div>
 
       {actionError && (
@@ -103,8 +116,9 @@ export function ApprovalCard({ approval, onActionComplete }: ApprovalCardProps) 
 
         <button
           onClick={() => handleAction("approve")}
-          disabled={submitting}
-          className="apple-press inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[12px] font-bold bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-white shadow-sm disabled:opacity-50"
+          disabled={submitting || !isExecutable}
+          title={!isExecutable ? "Client requests cannot be executed directly. Reject or counter." : undefined}
+          className="apple-press inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[12px] font-bold bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {submitting ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
