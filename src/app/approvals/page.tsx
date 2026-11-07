@@ -29,7 +29,6 @@ export default async function ApprovalsPage() {
           <span className="ap-error-card__icon" aria-hidden>
             <AlertIcon width={24} height={24} />
           </span>
-          <p className="ap-eyebrow">Owner console</p>
           <h1>Approvals are unavailable</h1>
           <p>{errorMessage}</p>
           <Link className="ap-btn ap-btn--primary" href="/approvals">

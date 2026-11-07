@@ -109,7 +109,6 @@ export default function ApprovalCard({
           <p className="ap-amount">{formatMoney(invoice.amount, invoice.currency)}</p>
           <p className="ap-meta">
             <span className="ap-mono">{invoice.paypal_invoice_id}</span>
-            <span aria-hidden>·</span>
             <span>Due {formatDate(invoice.due_date, new Date(demoNow))}</span>
           </p>
           {late > 0 ? (

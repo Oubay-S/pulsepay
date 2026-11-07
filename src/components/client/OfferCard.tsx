@@ -43,11 +43,29 @@ function acceptedCopy(offer: OfferView): { title: string; body: string } {
         title: 'Discount active',
         body: 'PayPal has your updated invoice. Pay the discounted amount by the deadline to keep the saving.',
       };
-    case 'plan':
+    case 'plan': {
+      const total = offer.installments.length;
+      const paid = offer.installments.filter((installment) => installment.status === 'PAID').length;
+
+      if (paid >= total) {
+        return {
+          title: 'Plan complete',
+          body: 'Every installment has been paid. Nothing else is needed.',
+        };
+      }
+
+      if (paid > 0) {
+        return {
+          title: 'Payment plan active',
+          body: `${paid} of ${total} payments settled. The next installment will appear in PayPal on its due date.`,
+        };
+      }
+
       return {
         title: 'Payment plan active',
         body: 'The first payment is due now. Later payments are scheduled automatically and will appear in PayPal on their due dates.',
       };
+    }
     case 'pay_later':
       return {
         title: 'Pay Later selected',

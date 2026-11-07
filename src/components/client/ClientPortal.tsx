@@ -426,7 +426,7 @@ export default function ClientPortal({
           </span>
           <div className="pp-brand__copy">
             <p className="pp-brand__name">{data.businessName}</p>
-            <p className="pp-brand__sub">Billing assistant</p>
+            <p className="pp-brand__sub">Secure payment page</p>
           </div>
         </div>
 
@@ -557,10 +557,9 @@ export default function ClientPortal({
 
       <footer className="pp-footer">
         <p>
-          This is an automated assistant acting for {data.businessName}. A person can step in at
-          any time.
+          This private page is provided by {data.businessName}. A person can step in at any time.
         </p>
-        <p className="pp-footer__brand">Secured by PulsePay</p>
+        <p className="pp-footer__brand">PulsePay · Secure payment portal</p>
       </footer>
     </main>
   );

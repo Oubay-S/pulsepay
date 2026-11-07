@@ -10,7 +10,6 @@ import ApprovalCard from './ApprovalCard';
 import {
   AlertIcon,
   CheckCircleIcon,
-  ClockIcon,
   RefreshIcon,
   ShieldCheckIcon,
   SpinnerIcon,
@@ -178,7 +177,6 @@ export default function ApprovalsQueue({ initial }: ApprovalsQueueProps) {
 
       <main className="ap-main">
         <section className="ap-hero">
-          <p className="ap-eyebrow">Human in the loop</p>
           <h1>Approvals &amp; disputes</h1>
           <p className="ap-hero__sub">
             Requests the assistant could not approve on its own. You stay in control of every
@@ -186,55 +184,30 @@ export default function ApprovalsQueue({ initial }: ApprovalsQueueProps) {
           </p>
         </section>
 
-        <section className="ap-kpis" aria-label="Queue summary">
-          <div className="ap-kpi">
-            <span className="ap-kpi__icon">
-              <ClockIcon width={17} height={17} />
-            </span>
-            <div>
-              <p className="ap-kpi__label">Waiting</p>
-              <p className="ap-kpi__value">{approvals.length}</p>
-              <p className="ap-kpi__sub">
-                {approvals.length === 1 ? 'request' : 'requests'}
-              </p>
-            </div>
+        <section className="ap-summary" aria-label="Queue summary">
+          <div className="ap-stat">
+            <p className="ap-stat__label">Waiting</p>
+            <p className="ap-stat__value">{approvals.length}</p>
+            <p className="ap-stat__sub">
+              {approvals.length === 1 ? 'request' : 'requests'}
+            </p>
           </div>
-
-          <div className={`ap-kpi ${disputeCount > 0 ? 'ap-kpi--danger' : ''}`}>
-            <span className="ap-kpi__icon">
-              <AlertIcon width={17} height={17} />
-            </span>
-            <div>
-              <p className="ap-kpi__label">Disputes</p>
-              <p className="ap-kpi__value">{disputeCount}</p>
-              <p className="ap-kpi__sub">automation paused</p>
-            </div>
+          <div className={`ap-stat ${disputeCount > 0 ? 'ap-stat--danger' : ''}`}>
+            <p className="ap-stat__label">Disputes</p>
+            <p className="ap-stat__value">{disputeCount}</p>
+            <p className="ap-stat__sub">automation paused</p>
           </div>
-
-          <div className="ap-kpi">
-            <span className="ap-kpi__icon">
-              <ShieldCheckIcon width={17} height={17} />
-            </span>
-            <div>
-              <p className="ap-kpi__label">Value in review</p>
-              <p className="ap-kpi__value ap-mono">{formatMoney(totalValue)}</p>
-              <p className="ap-kpi__sub">
-                across {approvals.length} {approvals.length === 1 ? 'invoice' : 'invoices'}
-              </p>
-            </div>
+          <div className="ap-stat">
+            <p className="ap-stat__label">Value in review</p>
+            <p className="ap-stat__value ap-mono">{formatMoney(totalValue)}</p>
+            <p className="ap-stat__sub">
+              across {approvals.length} {approvals.length === 1 ? 'invoice' : 'invoices'}
+            </p>
           </div>
-
-          <div className="ap-kpi ap-kpi--policy">
-            <span className="ap-kpi__icon">
-              <CheckCircleIcon width={17} height={17} />
-            </span>
-            <div>
-              <p className="ap-kpi__label">Policy</p>
-              <p className="ap-kpi__value">{maxDiscount}%</p>
-              <p className="ap-kpi__sub">
-                max discount · {maxInstallments} installments
-              </p>
-            </div>
+          <div className="ap-stat">
+            <p className="ap-stat__label">Policy</p>
+            <p className="ap-stat__value">{maxDiscount}%</p>
+            <p className="ap-stat__sub">max discount · {maxInstallments} installments</p>
           </div>
         </section>
 

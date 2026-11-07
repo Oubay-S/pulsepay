@@ -151,14 +151,18 @@ npm run build
 ### New screens
 - **Client portal**: `src/app/c/[token]/page.tsx`
   - Server-rendered first paint, then 6-second polling.
+  - Real **Pay in PayPal** CTA from the merged `payable.payer_link` (works for invoices and plan installments).
   - Agent / client / owner conversation bubbles, quick replies, optimistic sending, typing state.
-  - Offer cards for early-payment discounts, installment plans, and informational PayPal Pay Later.
+  - Offer rows for early-payment discounts, installment plans, and informational PayPal Pay Later.
   - Pending-owner, disputed, paid, and invalid-link states.
   - Mobile-first, dark mode, reduced-motion support.
 - **Owner approvals**: `src/app/approvals/page.tsx`
-  - Queue summary, dispute banners, client links.
+  - Summary strip, dispute banners, client links.
   - Approve, reject with a reason, and counter with a discount or an installment plan.
   - Counter-offers are validated before they become client-facing proposals.
+- **Shared visual system**: `src/app/pulsepay-theme.css`
+  - Quiet-ledger palette: porcelain canvas, evergreen actions, sage and stone surfaces.
+  - Shared by the client portal and approvals so the two sides feel like one product.
 
 ### New libraries
 - `src/lib/client-portal/` — safe token-payload normalization, offer view models, formatting.
@@ -166,7 +170,8 @@ npm run build
 - `src/lib/email.ts` — Resend follow-up email with HTML + text versions. Email is optional; the client page works without it.
 
 ### Additive API changes
-- `GET /api/c/[token]` now returns `client_name`, `business_tone`, and `demo_now`, with `Cache-Control: no-store`.
+- `GET /api/c/[token]` now returns `client_name`, `business_tone`, `demo_now`, `payable`, and `paylater`, with `Cache-Control: no-store`.
+- `GET /api/invoices` now includes conversation tokens so the owner dashboard can open the client page directly.
 - `GET /api/approvals` now returns `policy`, `demo_now`, and the conversation token for client links.
 - `POST /api/approvals/:id` validates approve/counter terms and resumes a disputed conversation after an owner counter.
 - `POST /api/c/[token]/accept` now verifies that the arrangement belongs to the token's invoice and only allows `ACTIVE` conversations.
@@ -179,6 +184,7 @@ npm run build
 - Browser checks: new conversation, plan offers, accepted plan, pending owner review, dispute, paid invoice, invalid token, approvals counter, approvals reject; desktop, mobile, and dark mode.
 
 ### Open integration points
-- **Omar / Oubay**: share the real PayPal Sandbox app credentials. The merged PayPal layer deliberately refuses to fake money movement when keys are missing. The client page now consumes the payable payer link and the Pay Later routes from `main`.
+- **Omar / Oubay**: share the real PayPal Sandbox app credentials. The merged PayPal layer deliberately refuses to fake money movement when keys are missing. The client page consumes the payable payer link; Pay Later is still presented as informational until we render the PayPal JS SDK inside the existing card.
+- **Taha**: the client portal now has a real pay CTA and a compact invoice journey; reuse `src/app/pulsepay-theme.css` tokens for the dashboard if helpful.
 - **Taha**: link the dashboard to `/approvals` and add the client-page token to the split view (the approvals cards already open the client page).
 - **Oubay**: service-role key for every teammate's local `.env.local`, and review of the additive API changes above.

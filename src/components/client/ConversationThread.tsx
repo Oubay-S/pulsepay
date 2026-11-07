@@ -110,19 +110,25 @@ function WelcomeMessage({
 }) {
   const first = firstName(clientName);
   const paid = invoice.status === 'PAID';
+  const arrangementActive =
+    invoice.status === 'SUPERSEDED' || invoice.status === 'PARTIALLY_PAID';
   const late = daysPastDue(invoice.dueDate, demoNow);
   const remaining = daysUntil(invoice.dueDate, demoNow);
   const dueSentence = paid
     ? 'It has been paid in full.'
-    : late > 0
-      ? `It is ${pluralize(late, 'day')} past due.`
-      : remaining >= 0
-        ? `It is due in ${pluralize(remaining, 'day')}.`
-        : '';
+    : arrangementActive
+      ? 'A payment plan is active.'
+      : late > 0
+        ? `It is ${pluralize(late, 'day')} past due.`
+        : remaining >= 0
+          ? `It is due in ${pluralize(remaining, 'day')}.`
+          : '';
 
   const closing = paid
     ? 'Nothing else is needed — thank you.'
-    : `If paying in full is difficult, reply below and I'll show you options that follow ${businessName}'s rules.`;
+    : arrangementActive
+      ? 'Your installment schedule is shown with the invoice. Reply below if you have a question.'
+      : `If paying in full is difficult, reply below and I'll show you options that follow ${businessName}'s rules.`;
 
   return (
     <div className="pp-msg pp-msg--agent">

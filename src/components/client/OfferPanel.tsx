@@ -1,5 +1,4 @@
 import type { ClientPortalInvoice, OfferView } from '@/lib/client-portal/types';
-import { formatMoney } from '@/lib/client-portal/format';
 import OfferCard from './OfferCard';
 import { ShieldCheckIcon, SparklesIcon } from './icons';
 
@@ -24,6 +23,8 @@ export default function OfferPanel({
   error,
   variant,
 }: OfferPanelProps) {
+  if (invoice.status === 'PAID') return null;
+
   return (
     <section
       className={`pp-offers pp-offers--${variant}`}
@@ -34,7 +35,7 @@ export default function OfferPanel({
           <ShieldCheckIcon width={18} height={18} />
         </span>
         <div>
-          <h2 className="pp-offers__title">Options to settle</h2>
+          <h2 className="pp-offers__title">Ways to pay</h2>
           <p className="pp-offers__sub">
             Within {businessName}&apos;s rules. Anything else goes to the owner.
           </p>
@@ -44,9 +45,7 @@ export default function OfferPanel({
       {offers.length === 0 ? (
         <div className="pp-offers__empty">
           <SparklesIcon width={18} height={18} />
-          {invoice.status === 'PAID' ? (
-            <p>This invoice is settled. Nothing left to do — thank you.</p>
-          ) : invoice.status === 'SUPERSEDED' || invoice.status === 'PARTIALLY_PAID' ? (
+          {invoice.status === 'SUPERSEDED' || invoice.status === 'PARTIALLY_PAID' ? (
             <p>A payment arrangement is active. The details are in your conversation.</p>
           ) : (
             <p>
@@ -72,15 +71,9 @@ export default function OfferPanel({
         </div>
       )}
 
-      {offers.length > 0 && invoice.status !== 'PAID' ? (
+      {offers.length > 0 ? (
         <p className="pp-offers__footnote">
           You can also ask a question below. A person from {businessName} can step in at any time.
-        </p>
-      ) : null}
-
-      {invoice.status === 'PAID' ? (
-        <p className="pp-offers__paid">
-          Paid {formatMoney(invoice.amount, invoice.currency)} · no balance remaining
         </p>
       ) : null}
     </section>

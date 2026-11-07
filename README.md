@@ -103,6 +103,7 @@ Configure your keys or use the team shared Supabase instance detailed in [docs/C
 | `PAYPAL_CLIENT_ID` | PayPal Sandbox App Client ID |
 | `PAYPAL_CLIENT_SECRET` | PayPal Sandbox App Secret |
 | `PAYPAL_WEBHOOK_ID` | PayPal Sandbox Webhook ID |
+| `NEXT_PUBLIC_PAYPAL_CLIENT_ID` | PayPal browser SDK client ID (same value as `PAYPAL_CLIENT_ID`) |
 | `LLM_PRIMARY_API_KEY` | Google AI Studio Gemini API key (free tier) |
 | `LLM_FALLBACK_API_KEY` | Groq API key (free tier) |
 

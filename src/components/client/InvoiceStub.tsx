@@ -7,7 +7,13 @@ import {
   initials,
   pluralize,
 } from '@/lib/client-portal/format';
-import { ArrowUpRightIcon, LockIcon, WalletIcon } from './icons';
+import {
+  ArrowUpRightIcon,
+  CheckCircleIcon,
+  InfoIcon,
+  LockIcon,
+  WalletIcon,
+} from './icons';
 
 interface InvoiceStubProps {
   invoice: ClientPortalInvoice;
@@ -17,23 +23,21 @@ interface InvoiceStubProps {
   payable: ClientPortalPayable | null;
 }
 
-interface Stamp {
+type StatusTone = 'paid' | 'overdue' | 'due' | 'info' | 'muted';
+
+interface StatusView {
   label: string;
   detail: string;
-  tone: 'paid' | 'overdue' | 'due' | 'info' | 'muted';
+  tone: StatusTone;
 }
 
-function getStamp(invoice: ClientPortalInvoice, demoNow: string): Stamp {
+function getStatus(invoice: ClientPortalInvoice, demoNow: string): StatusView {
   const late = daysPastDue(invoice.dueDate, demoNow);
   const remaining = daysUntil(invoice.dueDate, demoNow);
 
   switch (invoice.status) {
     case 'PAID':
-      return {
-        label: 'Paid',
-        detail: 'Settled in full',
-        tone: 'paid',
-      };
+      return { label: 'Paid', detail: 'Settled in full', tone: 'paid' };
     case 'SUPERSEDED':
       return {
         label: 'In arrangement',
@@ -47,17 +51,9 @@ function getStamp(invoice: ClientPortalInvoice, demoNow: string): Stamp {
         tone: 'info',
       };
     case 'CANCELLED':
-      return {
-        label: 'Cancelled',
-        detail: 'This invoice was cancelled',
-        tone: 'muted',
-      };
+      return { label: 'Cancelled', detail: 'This invoice was cancelled', tone: 'muted' };
     case 'DRAFT':
-      return {
-        label: 'Draft',
-        detail: 'Not sent yet',
-        tone: 'muted',
-      };
+      return { label: 'Draft', detail: 'Not sent yet', tone: 'muted' };
     case 'SCHEDULED':
       return {
         label: 'Scheduled',
@@ -67,12 +63,11 @@ function getStamp(invoice: ClientPortalInvoice, demoNow: string): Stamp {
     default:
       if (late > 0) {
         return {
-          label: `${pluralize(late, 'day')} past due`,
-          detail: `Was due ${formatDate(invoice.dueDate, new Date(demoNow))}`,
+          label: pluralize(late, 'day') + ' overdue',
+          detail: `Due ${formatDate(invoice.dueDate, new Date(demoNow))}`,
           tone: 'overdue',
         };
       }
-
       if (remaining <= 7 && remaining >= 0) {
         return {
           label: remaining === 0 ? 'Due today' : `Due in ${pluralize(remaining, 'day')}`,
@@ -80,13 +75,18 @@ function getStamp(invoice: ClientPortalInvoice, demoNow: string): Stamp {
           tone: 'due',
         };
       }
-
       return {
         label: 'Due',
         detail: `Due ${formatDate(invoice.dueDate, new Date(demoNow))}`,
         tone: 'info',
       };
   }
+}
+
+function stageFor(invoice: ClientPortalInvoice): number {
+  if (invoice.status === 'PAID') return 2;
+  if (invoice.status === 'SUPERSEDED' || invoice.status === 'PARTIALLY_PAID') return 1;
+  return 0;
 }
 
 export default function InvoiceStub({
@@ -96,29 +96,41 @@ export default function InvoiceStub({
   demoNow,
   payable,
 }: InvoiceStubProps) {
-  const stamp = getStamp(invoice, demoNow);
+  const status = getStatus(invoice, demoNow);
   const now = new Date(demoNow);
+  const stage = stageFor(invoice);
+  const amountLabel =
+    invoice.status === 'PAID'
+      ? 'Amount paid'
+      : invoice.status === 'SUPERSEDED' || invoice.status === 'PARTIALLY_PAID'
+        ? 'Invoice amount'
+        : invoice.status === 'CANCELLED' || invoice.status === 'DRAFT'
+          ? 'Invoice amount'
+          : 'Amount due';
 
   return (
     <aside className="pp-stub" aria-label="Invoice summary">
-      <div className="pp-stub__head">
-        <span className="pp-mark" aria-hidden>
-          {initials(businessName)}
-        </span>
+      <div className="pp-stub__top">
         <div className="pp-stub__business">
-          <p className="pp-stub__eyebrow">Invoice from</p>
-          <p className="pp-stub__business-name">{businessName}</p>
+          <span className="pp-stub__mark" aria-hidden>
+            {initials(businessName)}
+          </span>
+          <div>
+            <p className="pp-stub__business-name">{businessName}</p>
+            <p className="pp-stub__business-sub">Invoice</p>
+          </div>
         </div>
+
+        <span className={`pp-status pp-status--${status.tone}`}>
+          <span className="pp-status__dot" aria-hidden />
+          {status.label}
+        </span>
       </div>
 
-      <span className={`pp-stamp pp-stamp--${stamp.tone}`}>{stamp.label}</span>
-
       <div className="pp-stub__amount-block">
-        <p className="pp-stub__label">Invoice amount</p>
+        <p className="pp-stub__label">{amountLabel}</p>
         <p className="pp-stub__amount">{formatMoney(invoice.amount, invoice.currency)}</p>
-        <p className={`pp-stub__status-detail pp-stub__status-detail--${stamp.tone}`}>
-          {stamp.detail}
-        </p>
+        <p className="pp-stub__status-detail">{status.detail}</p>
       </div>
 
       {payable ? (
@@ -138,15 +150,25 @@ export default function InvoiceStub({
             <span>
               {payable.kind === 'installment'
                 ? `Pay installment ${payable.installmentNumber ?? ''}`
-                : `Pay ${formatMoney(payable.amount, payable.currency)}`}
+                : `Pay ${formatMoney(payable.amount, payable.currency)} in PayPal`}
             </span>
             <ArrowUpRightIcon width={15} height={15} />
           </a>
           <p className="pp-stub__pay-note">
-            Secure checkout on PayPal · {formatMoney(payable.amount, payable.currency)}
+            You&apos;ll be redirected to PayPal to complete payment.
           </p>
         </div>
-      ) : null}
+      ) : invoice.status === 'PAID' ? (
+        <div className="pp-stub__paid-note">
+          <CheckCircleIcon width={17} height={17} />
+          Paid in full — thank you.
+        </div>
+      ) : (
+        <div className="pp-stub__paid-note pp-stub__paid-note--muted">
+          <InfoIcon width={16} height={16} />
+          No payment is due right now.
+        </div>
+      )}
 
       {invoice.description ? (
         <p className="pp-stub__memo" title={invoice.description}>
@@ -168,19 +190,29 @@ export default function InvoiceStub({
           <dd>{clientName || 'You'}</dd>
         </div>
         <div>
-          <dt>Status</dt>
-          <dd>{stamp.label}</dd>
+          <dt>Currency</dt>
+          <dd>{invoice.currency}</dd>
         </div>
       </dl>
 
-      <div className="pp-stub__tear" aria-hidden />
+      <div className="pp-rail" aria-label="Payment journey">
+        {['Invoice', 'Agreement', 'Paid'].map((label, index) => (
+          <div
+            key={label}
+            className={`pp-rail__step ${index < stage ? 'is-done' : ''} ${
+              index === stage ? 'is-current' : ''
+            }`}
+          >
+            <span className="pp-rail__dot" aria-hidden />
+            <span className="pp-rail__label">{label}</span>
+          </div>
+        ))}
+      </div>
 
       <p className="pp-stub__footnote">
-        <LockIcon width={14} height={14} />
-        Payments are handled securely by PayPal.
+        <LockIcon width={13} height={13} />
+        Payments are protected by PayPal.
       </p>
-
-      <span className="pp-stub__perforation" aria-hidden />
     </aside>
   );
 }

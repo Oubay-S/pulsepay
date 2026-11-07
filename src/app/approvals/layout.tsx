@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import '../pulsepay-theme.css';
 import './approvals.css';
 
 export const metadata: Metadata = {
