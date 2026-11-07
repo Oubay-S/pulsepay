@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { resolvePayableInvoice } from '@/lib/paypal/payer';
 
 export async function GET(
   req: NextRequest,
@@ -37,6 +38,10 @@ export async function GET(
       .in('status', ['PROPOSED', 'PENDING_APPROVAL', 'ACCEPTED'])
       .order('created_at', { ascending: false });
 
+    // What the client can pay right now. For a plan, this is the current
+    // SENT installment rather than the SUPERSEDED parent invoice.
+    const payable = await resolvePayableInvoice(supabase, invoice);
+
     return NextResponse.json({
       conversation_id: conversation.id,
       status: conversation.status,
@@ -49,6 +54,14 @@ export async function GET(
         due_date: invoice.due_date,
         description: invoice.description,
         status: invoice.status,
+      },
+      payable,
+      paylater: {
+        available: invoice.status === 'SENT',
+        amount: Number(invoice.amount),
+        currency: invoice.currency,
+        create_url: `/api/c/${token}/paylater/create`,
+        capture_url: `/api/c/${token}/paylater/capture`,
       },
       messages: messages || [],
       offers: offers || [],

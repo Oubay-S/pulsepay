@@ -416,21 +416,36 @@ async function executePayLater(
   ctx: ExecutionContext,
   invoiceAmount: number
 ): Promise<ExecutionResult> {
+  const expectedAmount = Number(ctx.invoice.amount);
+
+  if (Math.abs(invoiceAmount - expectedAmount) > 0.01) {
+    return {
+      success: false,
+      error: `Pay Later amount (${invoiceAmount}) does not match invoice amount (${expectedAmount})`,
+      action: 'FAILED',
+    };
+  }
+
   await logEvent(ctx.supabase, 'PAY_LATER_REQUESTED', 'invoice', ctx.invoice.id, {
     invoice_amount: invoiceAmount,
     paypal_invoice_id: ctx.invoice.paypal_invoice_id,
+    currency: ctx.currency,
   });
 
-  // The Orders v2 order + capture routes arrive in Phase 3. No PayPal object is
-  // created here, so we must not report a new PayPal ID.
+  // The order is created by the client page through
+  // /api/c/[token]/paylater/create so the PayPal JS SDK can render the Pay Later
+  // button. No PayPal object exists yet, so we never report a PayPal ID here.
   return {
     success: true,
     action: 'PAY_LATER_READY',
     paypal_ids: [],
     details: {
       invoiceAmount,
-      invoiceId: ctx.invoice.paypal_invoice_id,
+      invoiceId: ctx.invoice.id,
+      paypalInvoiceId: ctx.invoice.paypal_invoice_id,
+      currency: ctx.currency,
       orderCreated: false,
+      checkout: 'client_page',
     },
   };
 }

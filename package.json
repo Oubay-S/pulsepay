@@ -13,7 +13,9 @@
     "spike:paypal": "tsx scripts/paypal-spike.ts",
     "verify:phase1": "tsx scripts/verify-phase1.ts",
     "verify:webhook": "tsx scripts/verify-webhook.ts",
-    "verify:sync": "tsx scripts/verify-sync.ts"
+    "verify:sync": "tsx scripts/verify-sync.ts",
+    "verify:block-c": "tsx scripts/verify-block-c.ts",
+    "verify:paylater": "tsx scripts/verify-paylater.ts"
   },
   "dependencies": {
     "@paypal/agent-toolkit": "^1.11.0",

@@ -82,8 +82,6 @@ async function main(): Promise<void> {
   }
 
   const suffix = Math.random().toString(36).slice(2, 8);
-  const realId = `sync-real-${suffix}`;
-  const demoId = `sync-demo-${suffix}`;
   const realDescription = `Sync verification invoice ${suffix}`;
   const demoDescription = `[PulsePay demo] Skipped sync invoice ${suffix}`;
 
