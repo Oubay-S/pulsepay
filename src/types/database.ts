@@ -220,6 +220,7 @@ export type InstallmentUpdate = Partial<Omit<InstallmentRow, 'id'>>;
 
 export interface InvoiceWithClient extends InvoiceRow {
   client: ClientRow;
+  conversations?: Array<{ token: string; status: ConversationStatus }> | null;
 }
 
 export interface ConversationWithMessages extends ConversationRow {

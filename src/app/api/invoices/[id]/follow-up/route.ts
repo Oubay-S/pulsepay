@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { callLLM } from '@/lib/llm';
+import { sendFollowUpEmail } from '@/lib/email';
 import { nanoid } from 'nanoid';
 
 // LLM calls can be slow on free tiers.
@@ -94,8 +95,22 @@ Goal: Inquire gently about overdue invoice #${invoice.paypal_invoice_id} ($${amo
       },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
     const clientPageUrl = `${appUrl}/c/${conversation!.token}`;
+
+    // Email is a delivery convenience: a failure must not block the follow-up.
+    const email = client?.email
+      ? await sendFollowUpEmail({
+          to: client.email,
+          clientName: client.name,
+          businessName: business?.name || 'PulsePay',
+          invoiceNumber: invoice.paypal_invoice_id,
+          amount: Number(invoice.amount),
+          currency: invoice.currency || 'USD',
+          dueDate: invoice.due_date,
+          url: clientPageUrl,
+        })
+      : { sent: false, skipped: true };
 
     return NextResponse.json({
       success: true,
@@ -103,6 +118,7 @@ Goal: Inquire gently about overdue invoice #${invoice.paypal_invoice_id} ($${amo
       token: conversation!.token,
       message: followUpText,
       client_page_url: clientPageUrl,
+      email,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

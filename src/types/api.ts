@@ -61,11 +61,18 @@ export interface FollowUpRequest {
   business_id: string;
 }
 
+export interface FollowUpEmailStatus {
+  sent: boolean;
+  skipped: boolean;
+  error?: string;
+}
+
 export interface FollowUpResponse {
   conversation_id: string;
   token: string;
   message: string;
   client_page_url: string;
+  email?: FollowUpEmailStatus;
 }
 
 // ---------- Client Page ----------

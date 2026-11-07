@@ -24,7 +24,7 @@ export async function POST(
     // Verify conversation
     const { data: conversation, error: convErr } = await supabase
       .from('conversations')
-      .select('id, invoice_id')
+      .select('id, invoice_id, status')
       .eq('token', token)
       .single();
 
@@ -41,6 +41,18 @@ export async function POST(
 
     if (arrErr || !arrangement) {
       return NextResponse.json({ error: 'Arrangement not found' }, { status: 404 });
+    }
+
+    // A token may only accept arrangements that belong to its own invoice.
+    if (arrangement.invoice_id !== conversation.invoice_id) {
+      return NextResponse.json({ error: 'Arrangement not found' }, { status: 404 });
+    }
+
+    if (conversation.status !== 'ACTIVE') {
+      return NextResponse.json(
+        { error: 'This conversation is paused while the business owner reviews it.' },
+        { status: 409 }
+      );
     }
 
     if (arrangement.status !== 'PROPOSED') {
