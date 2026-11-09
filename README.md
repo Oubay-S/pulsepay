@@ -113,7 +113,7 @@ Verify database connectivity and sample scenarios:
 # Run local verification suite:
 npm run test:api
 
-# Run unit test suite (17 tests):
+# Run unit test suite:
 npm test
 
 # Re-seed demo database if needed:

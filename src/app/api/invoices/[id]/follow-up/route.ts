@@ -53,7 +53,8 @@ export async function POST(
     }
 
     const now = await getDemoNow();
-    const policy = business?.policies?.[0];
+    // policies.business_id is the PK, so PostgREST embeds it as an object, not an array.
+    const policy = Array.isArray(business?.policies) ? business.policies[0] : business?.policies;
     if (policy) {
       const { count } = conversation
         ? await supabase

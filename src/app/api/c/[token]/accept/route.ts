@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { executeAgreement } from '@/lib/paypal/executor';
 import { resolvePayableInvoice } from '@/lib/paypal/payer';
+import { ProposalSchema } from '@/lib/guard/schemas';
 import type { NegotiationProposal } from '@/types/proposals';
+
+const NEGOTIATION_TYPES = ['discount', 'plan', 'pay_later'] as const;
 
 // The executor creates, sends, and cancels real PayPal invoices.
 export const maxDuration = 60;
@@ -62,26 +65,59 @@ export async function POST(
       );
     }
 
+    // Stored terms are re-validated before any money moves.
+    const parsed = ProposalSchema.safeParse(arrangement.terms);
+    if (
+      !parsed.success ||
+      !NEGOTIATION_TYPES.includes(parsed.data.type as (typeof NEGOTIATION_TYPES)[number])
+    ) {
+      return NextResponse.json(
+        { error: 'This offer cannot be accepted. Please ask for a new offer.' },
+        { status: 400 }
+      );
+    }
+    const proposal = parsed.data as NegotiationProposal;
+
+    // Claim the arrangement atomically so a double click cannot run the executor twice.
+    const { data: claimed, error: claimErr } = await supabase
+      .from('arrangements')
+      .update({ status: 'ACCEPTED', updated_at: new Date().toISOString() })
+      .eq('id', arrangement.id)
+      .eq('status', 'PROPOSED')
+      .select('id')
+      .maybeSingle();
+
+    if (claimErr) {
+      return NextResponse.json({ error: claimErr.message }, { status: 500 });
+    }
+    if (!claimed) {
+      return NextResponse.json(
+        { error: 'This offer is already being processed.' },
+        { status: 409 }
+      );
+    }
+
     // Execute through PayPal Executor
-    const proposal = arrangement.terms as unknown as NegotiationProposal;
     const executionResult = await executeAgreement(proposal, arrangement.invoice, arrangement.id);
 
     if (!executionResult.success) {
+      // Release the claim so the client can retry.
+      await supabase
+        .from('arrangements')
+        .update({ status: 'PROPOSED', updated_at: new Date().toISOString() })
+        .eq('id', arrangement.id)
+        .eq('status', 'ACCEPTED');
+
       return NextResponse.json(
         { error: `Failed to set up agreement in PayPal: ${executionResult.error}` },
         { status: 500 }
       );
     }
 
-    // Update arrangement status
     const { data: updatedArrangement, error: updateErr } = await supabase
       .from('arrangements')
-      .update({
-        status: 'ACCEPTED',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', arrangement.id)
       .select('*, installments(*)')
+      .eq('id', arrangement.id)
       .single();
 
     if (updateErr) {
