@@ -50,7 +50,9 @@ export async function POST(
 
     const invoice = conversation.invoice;
     const business = invoice.business;
-    const policy: PolicyRow = business.policies?.[0] || {
+    // policies.business_id is the PK, so PostgREST embeds it as an object, not an array.
+    const embeddedPolicy = Array.isArray(business.policies) ? business.policies[0] : business.policies;
+    const policy: PolicyRow = embeddedPolicy || {
       business_id: business.id,
       max_discount_pct: 10,
       max_installments: 3,
@@ -188,15 +190,17 @@ export async function POST(
           const proposalCandidate = call.arguments;
           const guardResult = await checkPolicy(proposalCandidate, policy, invoice);
 
-          if (guardResult.allowed) {
+          if (guardResult.allowed && guardResult.proposal) {
+            // Store the Zod-parsed proposal, not the raw LLM arguments (drops `message` and unknown keys).
+            const validated = guardResult.proposal;
             const status = guardResult.needsApproval ? 'PENDING_APPROVAL' : 'PROPOSED';
             const { data: newArrangement } = await supabase
               .from('arrangements')
               .insert({
                 invoice_id: invoice.id,
                 conversation_id: conversation.id,
-                type: (proposalCandidate.type as string).toUpperCase() as 'DISCOUNT' | 'PLAN' | 'PAY_LATER',
-                terms: proposalCandidate,
+                type: validated.type.toUpperCase() as 'DISCOUNT' | 'PLAN' | 'PAY_LATER',
+                terms: validated,
                 status,
                 approved_by: guardResult.needsApproval ? null : 'POLICY',
               })
