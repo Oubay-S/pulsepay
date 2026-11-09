@@ -88,16 +88,8 @@ export async function POST(
         );
       }
 
-      const executionResult = await executeAgreement(proposal, invoice, arrangement.id);
-
-      if (!executionResult.success) {
-        return NextResponse.json(
-          { error: `Execution failed: ${executionResult.error}` },
-          { status: 500 }
-        );
-      }
-
-      const { data: updatedArr, error: updateErr } = await supabase
+      // Claim atomically so a double click cannot run the executor twice.
+      const { data: updatedArr, error: claimErr } = await supabase
         .from('arrangements')
         .update({
           status: 'ACCEPTED',
@@ -105,11 +97,38 @@ export async function POST(
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
+        .eq('status', 'PENDING_APPROVAL')
         .select()
-        .single();
+        .maybeSingle();
 
-      if (updateErr) {
-        return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      if (claimErr) {
+        return NextResponse.json({ error: claimErr.message }, { status: 500 });
+      }
+      if (!updatedArr) {
+        return NextResponse.json(
+          { error: 'This request is already being processed.' },
+          { status: 409 }
+        );
+      }
+
+      const executionResult = await executeAgreement(proposal, invoice, arrangement.id);
+
+      if (!executionResult.success) {
+        // Release the claim so the owner can retry.
+        await supabase
+          .from('arrangements')
+          .update({
+            status: 'PENDING_APPROVAL',
+            approved_by: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+          .eq('status', 'ACCEPTED');
+
+        return NextResponse.json(
+          { error: `Execution failed: ${executionResult.error}` },
+          { status: 500 }
+        );
       }
 
       // If there's an active conversation, notify client and resume automation.
