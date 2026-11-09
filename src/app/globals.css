@@ -7,40 +7,47 @@
 
 :root {
   /* Surfaces & Canvas */
-  --pp-bg: #ffffff;
-  --pp-bg-deep: #f8f9fb;
-  --pp-surface: #ffffff;
-  --pp-surface-soft: #f7f8fa;
-  --pp-surface-muted: #f2f4f7;
-  --pp-surface-hover: rgba(0, 112, 186, 0.04);
+  --pp-bg: #FCFCFC;
+  --pp-bg-deep: #F4F6EE;
+  --pp-surface: #FFFFFF;
+  --pp-surface-soft: #F4F6EE;
+  --pp-surface-muted: #EEF2E3;
+  --pp-surface-hover: rgba(4, 63, 46, 0.04);
 
   /* Typography / Ink */
-  --pp-ink: #0b1220;
-  --pp-ink-soft: #5b6675;
-  --pp-ink-faint: #667085;
-  --pp-ink-tertiary: #98a2b3;
+  --pp-ink: #242524;
+  --pp-ink-soft: #4A524C;
+  --pp-ink-faint: #5F6862;
+  --pp-ink-tertiary: #8A938C;
 
   /* Borders & Dividers */
-  --pp-line: #eceff3;
-  --pp-line-strong: #dfe4ea;
-  --pp-line-translucent: rgba(236, 239, 243, 0.8);
+  --pp-line: #E4E8DA;
+  --pp-line-strong: #D3D9C6;
+  --pp-line-translucent: rgba(228, 232, 218, 0.8);
 
-  /* Brand: Official PayPal Pro Blue */
-  --pp-accent: #0070ba;
-  --pp-accent-strong: #005ea6;
-  --pp-accent-soft: #eaf3fb;
-  --pp-accent-tint: #f6fafe;
-  --pp-accent-border: rgba(0, 112, 186, 0.22);
+  /* Brand: Mode Forest Green & Lime */
+  --pp-primary: #043F2E;
+  --pp-primary-strong: #032E22;
+  --pp-primary-soft: #EEF2E3;
+  --pp-primary-tint: #F6F9EF;
+  --pp-on-primary: #C8F169;
+  --pp-lime: #C8F169;
+  --pp-lime-soft: #F1FAD9;
 
-  /* Dark Near-Black Actions */
-  --pp-primary: #0b1220;
-  --pp-primary-strong: #1a2536;
-  --pp-primary-soft: #f2f4f7;
+  --pp-accent: #2A6F2B;
+  --pp-accent-strong: #043F2E;
+  --pp-accent-soft: #EEF2E3;
+  --pp-accent-tint: #F6F9EF;
+  --pp-accent-border: rgba(42, 111, 43, 0.22);
+
+  /* PayPal Branded Checkout */
+  --pp-paypal: #0070BA;
+  --pp-paypal-strong: #005EA6;
 
   /* States: Money & Receivables Health */
-  --pp-recovered: #067647;
-  --pp-recovered-soft: #ecfdf3;
-  --pp-recovered-border: rgba(6, 118, 71, 0.2);
+  --pp-recovered: #1F7A3A;
+  --pp-recovered-soft: #F1FAD9;
+  --pp-recovered-border: rgba(31, 122, 58, 0.22);
 
   --pp-due: #b54708;
   --pp-due-soft: #fffaeb;
@@ -54,24 +61,33 @@
   --pp-approval-soft: #fffaeb;
   --pp-approval-border: rgba(181, 71, 8, 0.2);
 
-  --pp-owner: #003087;
-  --pp-owner-soft: #f5f8fd;
+  --pp-owner: #043F2E;
+  --pp-owner-soft: #EEF2E3;
 
-  /* Shadows (Apple diffuse, physical elevation) */
-  --pp-shadow-sm: 0 1px 2px rgba(11, 18, 32, 0.04);
-  --pp-shadow-md: 0 10px 30px -24px rgba(11, 18, 32, 0.12);
+  /* Elevation & Radius (Mode colour-blocking) */
+  --pp-shadow-sm: none;
+  --pp-shadow-md: 0 1px 0 var(--pp-line);
   --pp-shadow-lg: 0 24px 56px -34px rgba(11, 18, 32, 0.16);
-  --pp-radius: 14px;
+  --pp-radius: 10px;
+  --pp-radius-sm: 4px;
+  --pp-font-display: var(--font-display), Georgia, serif;
 }
 
 body {
-  background: var(--pp-bg-deep);
+  background: var(--pp-bg);
   color: var(--pp-ink);
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
   letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+}
+
+.pp-display {
+  font-family: var(--pp-font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 /* Tabular figures for financial accuracy */
@@ -81,28 +97,24 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Apple Materials & Glass Header */
+/* Mode Colour-Blocked Header & Cards */
 .glass-nav-light {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid var(--pp-line);
-  box-shadow: 0 1px 0 var(--pp-line);
+  background: var(--pp-primary);
 }
 
-.apple-card-light {
-  background: var(--pp-surface);
-  border: 1px solid var(--pp-line);
-  box-shadow: var(--pp-shadow-sm);
-  border-radius: var(--pp-radius);
-  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 140ms cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 140ms ease;
-}
+/* In a layer so Tailwind utilities (e.g. border-l-4 status accents) can override it. */
+@layer components {
+  .apple-card-light {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-line);
+    border-radius: var(--pp-radius);
+    transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 140ms ease;
+  }
 
-.apple-card-light:hover {
-  border-color: var(--pp-line-strong);
-  box-shadow: var(--pp-shadow-md);
+  .apple-card-light:hover {
+    border-color: var(--pp-line-strong);
+  }
 }
 
 .apple-press {
@@ -116,14 +128,14 @@ body {
 }
 
 /* ============================================================
-   AG Grid Quartz Light Customization (Aligned with Quiet Ledger)
+   AG Grid Quartz Light Customization (Aligned with Mode)
    ============================================================ */
 
 .ag-theme-quartz {
   --ag-font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif !important;
   --ag-font-size: 13.5px !important;
   --ag-background-color: var(--pp-surface) !important;
-  --ag-header-background-color: var(--pp-bg-deep) !important;
+  --ag-header-background-color: var(--pp-surface-muted) !important;
   --ag-header-foreground-color: var(--pp-ink-soft) !important;
   --ag-data-color: var(--pp-ink) !important;
   --ag-border-color: var(--pp-line) !important;
@@ -133,10 +145,9 @@ body {
   --ag-cell-horizontal-padding: 16px !important;
   --ag-row-height: 54px !important;
   --ag-header-height: 42px !important;
-  border-radius: var(--pp-radius) !important;
+  border-radius: 10px !important;
   overflow: hidden !important;
   border: 1px solid var(--pp-line) !important;
-  box-shadow: var(--pp-shadow-sm) !important;
 }
 
 .ag-header-cell-text {
@@ -193,7 +204,7 @@ body {
   width: 3px;
   height: 60%;
   border-radius: 0 2px 2px 0;
-  background: var(--pp-accent);
+  background: var(--pp-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {

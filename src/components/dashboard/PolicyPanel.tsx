@@ -212,7 +212,7 @@ export function PolicyPanel({ onSaved }: PolicyPanelProps) {
             <button
               type="submit"
               disabled={saving}
-              className="apple-press inline-flex items-center gap-2 px-5 py-2 rounded-xl text-[12.5px] font-bold bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-white shadow-sm disabled:opacity-50"
+              className="apple-press inline-flex items-center gap-2 px-5 py-2 rounded-[4px] text-[12.5px] font-bold bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-[var(--pp-on-primary)] disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save Business Policies

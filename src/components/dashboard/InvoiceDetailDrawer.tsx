@@ -91,7 +91,7 @@ export function InvoiceDetailDrawer({ invoice, onClose }: InvoiceDetailDrawerPro
       {/* Scrim */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 animate-fade-in"
+        className="fixed inset-0 bg-[#043F2E]/40 backdrop-blur-sm transition-opacity duration-300 animate-fade-in"
       />
 
       {/* Drawer Panel */}
@@ -197,20 +197,20 @@ export function InvoiceDetailDrawer({ invoice, onClose }: InvoiceDetailDrawerPro
                   const isOwner = m.sender === "OWNER";
                   
                   let senderLabel = "PulsePay Agent";
-                  let bubbleClass = "mr-auto bg-[var(--pp-surface-soft)] border border-[var(--pp-line)] text-[var(--pp-ink)]";
+                  let bubbleClass = "mr-auto bg-[var(--pp-lime-soft)] text-[var(--pp-ink)] rounded-[16px_16px_16px_0]";
                   
                   if (isClient) {
                     senderLabel = "Client";
-                    bubbleClass = "ml-auto bg-[var(--pp-primary)] text-white";
+                    bubbleClass = "ml-auto bg-[var(--pp-primary)] text-[#FCFCFC] rounded-[16px_16px_0_16px]";
                   } else if (isOwner) {
                     senderLabel = "Business Owner";
-                    bubbleClass = "mr-auto bg-[var(--pp-accent-soft)] border border-[var(--pp-accent-border)] text-[var(--pp-ink)]";
+                    bubbleClass = "mr-auto bg-[var(--pp-surface-muted)] text-[var(--pp-ink)] rounded-[16px_16px_16px_4px]";
                   }
 
                   return (
                     <div
                       key={m.id}
-                      className={`p-3 rounded-xl text-[12.5px] leading-relaxed max-w-[90%] ${bubbleClass}`}
+                      className={`p-3 text-[12.5px] leading-relaxed max-w-[90%] ${bubbleClass}`}
                     >
                       <div className="text-[10px] font-bold opacity-75 mb-1">
                         {senderLabel}
@@ -253,7 +253,7 @@ export function InvoiceDetailDrawer({ invoice, onClose }: InvoiceDetailDrawerPro
         <div className="p-4 border-t border-[var(--pp-line)] bg-[var(--pp-surface)] flex items-center justify-between">
           <button
             onClick={onClose}
-            className="apple-press px-4 py-2 rounded-xl text-[12.5px] font-semibold text-[var(--pp-ink-soft)] hover:text-[var(--pp-ink)] hover:bg-[var(--pp-surface-muted)]"
+            className="apple-press px-4 py-2 rounded-[4px] text-[12.5px] font-semibold text-[var(--pp-ink-soft)] hover:text-[var(--pp-ink)] hover:bg-[var(--pp-surface-muted)]"
           >
             Close
           </button>
@@ -262,7 +262,7 @@ export function InvoiceDetailDrawer({ invoice, onClose }: InvoiceDetailDrawerPro
             href={`/c/${portalToken}`}
             target="_blank"
             rel="noreferrer"
-            className="apple-press inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12.5px] font-bold bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-white shadow-sm"
+            className="apple-press inline-flex items-center gap-1.5 px-4 py-2 rounded-[4px] text-[12.5px] font-bold bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-[var(--pp-on-primary)]"
           >
             <span>Open Client Link</span>
             <ExternalLink className="w-3.5 h-3.5" />

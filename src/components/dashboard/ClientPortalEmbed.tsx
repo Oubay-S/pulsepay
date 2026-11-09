@@ -174,10 +174,10 @@ export function ClientPortalEmbed({ token }: ClientPortalEmbedProps) {
                   {isClient ? "You (Client)" : "PulsePay Assistant"}
                 </span>
                 <div
-                  className={`p-3.5 rounded-2xl text-[12.5px] leading-relaxed shadow-sm ${
+                  className={`p-3.5 text-[12.5px] leading-relaxed ${
                     isClient
-                      ? "bg-[var(--pp-primary)] text-white"
-                      : "bg-[var(--pp-surface)] border border-[var(--pp-line)] text-[var(--pp-ink)]"
+                      ? "bg-[var(--pp-primary)] text-[#FCFCFC] rounded-[16px_16px_0_16px]"
+                      : "bg-[var(--pp-lime-soft)] text-[var(--pp-ink)] rounded-[16px_16px_16px_0]"
                   }`}
                 >
                   {m.content}
@@ -189,7 +189,7 @@ export function ClientPortalEmbed({ token }: ClientPortalEmbedProps) {
 
         {/* Structured Offers */}
         {offers.length > 0 && (
-          <div className="my-2 p-3.5 rounded-2xl bg-[var(--pp-surface)] border border-[var(--pp-line)] flex flex-col gap-2.5 shadow-sm">
+          <div className="my-2 p-3.5 rounded-[10px] bg-[var(--pp-surface)] border border-[var(--pp-line)] flex flex-col gap-2.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--pp-accent)] flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" /> Options Available
             </span>
@@ -200,7 +200,7 @@ export function ClientPortalEmbed({ token }: ClientPortalEmbedProps) {
               return (
                 <div
                   key={offer.id}
-                  className="p-3 rounded-xl bg-[var(--pp-surface-muted)] border border-[var(--pp-line)] flex items-center justify-between gap-3"
+                  className="p-3 rounded-[10px] bg-[var(--pp-surface-muted)] border border-[var(--pp-line)] flex items-center justify-between gap-3"
                 >
                   <div className="flex items-center gap-2.5">
                     {offer.type === "DISCOUNT" && (
@@ -235,7 +235,7 @@ export function ClientPortalEmbed({ token }: ClientPortalEmbedProps) {
                     <button
                       onClick={() => handleAcceptOffer(offer.id)}
                       disabled={acceptingId === offer.id}
-                      className="apple-press px-3 py-1.5 rounded-lg text-[11.5px] font-bold bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-white shadow-sm disabled:opacity-50"
+                      className="apple-press px-3 py-1.5 rounded-[4px] text-[11.5px] font-bold bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-[var(--pp-on-primary)] disabled:opacity-50"
                     >
                       {acceptingId === offer.id ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -259,13 +259,13 @@ export function ClientPortalEmbed({ token }: ClientPortalEmbedProps) {
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           disabled={sending}
-          className="flex-1 px-3.5 py-2 text-[12.5px] bg-[var(--pp-surface-muted)] border border-[var(--pp-line)] rounded-xl text-[var(--pp-ink)] placeholder:text-[var(--pp-ink-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--pp-accent)]"
+          className="flex-1 px-3.5 py-2 text-[12.5px] bg-[var(--pp-surface-muted)] border border-[var(--pp-line)] rounded-[10px] text-[var(--pp-ink)] placeholder:text-[var(--pp-ink-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--pp-accent)]"
         />
 
         <button
           type="submit"
           disabled={sending || !inputMessage.trim()}
-          className="apple-press p-2 rounded-xl bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-white shadow-sm disabled:opacity-40"
+          className="apple-press p-2 rounded-[4px] bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-[var(--pp-on-primary)] disabled:opacity-40"
         >
           {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </button>

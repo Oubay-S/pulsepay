@@ -53,7 +53,7 @@ export function DemoClock({ onRefresh }: DemoClockProps) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl bg-[var(--pp-surface)] border border-[var(--pp-line)] shadow-sm">
+    <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-[10px] bg-[var(--pp-surface)] border border-[var(--pp-line)]">
       <div className="flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold text-[var(--pp-ink-soft)]">
         <Clock className="w-3.5 h-3.5 text-[var(--pp-accent)]" />
         <span>Demo Clock</span>
@@ -66,7 +66,7 @@ export function DemoClock({ onRefresh }: DemoClockProps) {
         <button
           onClick={() => handleAdvance(1)}
           disabled={advancing || resetting}
-          className="apple-press inline-flex items-center gap-1 px-3 py-1 text-[11.5px] font-semibold rounded-lg bg-[var(--pp-surface-muted)] hover:bg-[var(--pp-line)] text-[var(--pp-ink)] border border-[var(--pp-line)] disabled:opacity-50"
+          className="apple-press inline-flex items-center gap-1 px-3 py-1 text-[11.5px] font-semibold rounded-[4px] bg-[var(--pp-surface-muted)] hover:bg-[var(--pp-line)] text-[var(--pp-ink)] border border-[var(--pp-line)] disabled:opacity-50"
         >
           {advancing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
           +1 Day
@@ -75,7 +75,7 @@ export function DemoClock({ onRefresh }: DemoClockProps) {
         <button
           onClick={() => handleAdvance(7)}
           disabled={advancing || resetting}
-          className="apple-press inline-flex items-center gap-1 px-3 py-1 text-[11.5px] font-semibold rounded-lg bg-[var(--pp-accent-soft)] hover:bg-[var(--pp-accent-tint)] text-[var(--pp-accent)] border border-[var(--pp-accent-border)] disabled:opacity-50"
+          className="apple-press inline-flex items-center gap-1 px-3 py-1 text-[11.5px] font-semibold rounded-[4px] bg-[var(--pp-accent-soft)] hover:bg-[var(--pp-accent-tint)] text-[var(--pp-accent)] border border-[var(--pp-accent-border)] disabled:opacity-50"
         >
           {advancing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
           +7 Days (Trigger Due)
@@ -88,7 +88,7 @@ export function DemoClock({ onRefresh }: DemoClockProps) {
       <button
         onClick={handleReset}
         disabled={advancing || resetting}
-        className="apple-press inline-flex items-center gap-1 px-2.5 py-1 text-[11.5px] font-medium rounded-lg text-[var(--pp-ink-faint)] hover:text-[var(--pp-overdue)] hover:bg-[var(--pp-overdue-soft)] transition-colors disabled:opacity-50"
+        className="apple-press inline-flex items-center gap-1 px-2.5 py-1 text-[11.5px] font-medium rounded-[4px] text-[var(--pp-ink-faint)] hover:text-[var(--pp-overdue)] hover:bg-[var(--pp-overdue-soft)] transition-colors disabled:opacity-50"
       >
         <RotateCcw className={`w-3 h-3 ${resetting ? "animate-spin" : ""}`} />
         <span>Reset</span>
