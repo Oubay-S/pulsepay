@@ -22,7 +22,7 @@
 | Statistics in the pitch ("82%", "$100B", "#1 killer") | **Removed.** No unsourced numbers. Add a stat only if we find a real source. |
 | Named judges | **Removed** from the plan. Check the official judges list on Devpost before referencing anyone. |
 | Model names (Gemini 1.5 Flash, Claude 3.5 Haiku) | **Updated.** We use free AI models only (see section 2, "Zero-cost setup"), with fallback between two providers and cached demo replies. |
-| Render paid instance + cron | **Changed to free.** Render free web service kept awake by a free uptime pinger; no cron job (the demo clock covers time-based features). |
+| Render paid instance + cron | **Dropped.** The app is hosted on Vercel's free Hobby plan; no cron job (the demo clock covers time-based features). |
 
 ---
 
@@ -142,7 +142,7 @@ flowchart TD
 | AI | **Free AI models** with tool calling: primary + fallback provider (e.g. Gemini API free tier via Google AI Studio, Groq free tier, OpenRouter free models) | Zero cost; pick the pair that passes our agent tests |
 | Validation | **Zod** | Every LLM proposal is schema-checked before the guard |
 | Email | **Resend** (free tier) | Follow-ups with link to the client page |
-| Hosting | **Render free web service** + free uptime pinger (UptimeRobot or cron-job.org) | Zero cost, stays awake for judges; Render sponsor prize |
+| Hosting | **Vercel Hobby (free)** | Zero cost, serverless, deploys on every merge to `main`; Vercel sponsor prize |
 
 ### Zero-cost setup
 
@@ -151,7 +151,7 @@ Everything in this plan runs on free tiers. Nobody pays anything.
 | Service | Free option | How we stay within it |
 |---|---|---|
 | PayPal | Sandbox + developer account + Agent Toolkit | Free by design |
-| Hosting | Render free web service | Uptime pinger every 10 min keeps it awake; only one always-on service on the account so we stay within the free monthly instance hours |
+| Hosting | Vercel Hobby (free) | Serverless functions scale to zero; no always-on instance to pay for |
 | Database + realtime | Supabase free plan | The pinger's health check queries the database, so the project never counts as idle and isn't paused |
 | AI | Free models from two providers | See "AI on free models" below |
 | Tables | AG Grid Community (MIT) | Enterprise features only if the hackathon provides a key |
@@ -162,7 +162,7 @@ Everything in this plan runs on free tiers. Nobody pays anything.
 **Health check + pinger**
 - Route `/api/health` runs a tiny Supabase query (`select 1 from businesses limit 1`) and returns `200 OK`.
 - UptimeRobot (or cron-job.org) calls it every 10 minutes, from today until Dec 15.
-- One pinger keeps both Render and Supabase awake.
+- Normal demo traffic keeps Supabase active; Vercel needs no pinger.
 
 **AI on free models**
 - **Two providers with automatic fallback:** if the primary returns a rate-limit or error, retry once, then switch to the secondary.
@@ -338,39 +338,19 @@ create table demo_clock (
 | POST | `/api/demo/reset` | Restore demo business and invoices |
 | POST | `/api/paypal/webhook` | Payment events |
 
-### Hosting (`render.yaml`)
+### Hosting (Vercel)
 
-```yaml
-services:
-  - type: web
-    name: pulsepay
-    runtime: node
-    plan: free               # kept awake by the uptime pinger
-    buildCommand: npm ci && npm run build
-    startCommand: npm run start
-    healthCheckPath: /api/health
-    envVars:
-      - key: PAYPAL_CLIENT_ID
-        sync: false
-      - key: PAYPAL_CLIENT_SECRET
-        sync: false
-      - key: PAYPAL_WEBHOOK_ID
-        sync: false
-      - key: PAYPAL_ENVIRONMENT
-        value: sandbox
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: LLM_PRIMARY_API_KEY
-        sync: false
-      - key: LLM_FALLBACK_API_KEY
-        sync: false
-      - key: RESEND_API_KEY
-        sync: false
-```
+The app runs on Vercel's free Hobby plan. There is no `render.yaml` and no always-on server.
 
-No Render cron job (paid). For real (non-demo) installment dates, cron-job.org can call `/api/scheduler/run` hourly for free.
+- Build command: `npm run build`
+- Framework preset: Next.js (auto-detected)
+- Production URL: `https://pulsepay-rho.vercel.app`
+- Health check: `/api/health`
+- Environment variables live in the Vercel project (never committed): `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`, `PAYPAL_ENVIRONMENT=sandbox`, `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `LLM_PRIMARY_API_KEY`, `LLM_FALLBACK_API_KEY`, `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`.
+
+Serverless functions on Hobby can run for up to 60 seconds. `/api/demo/reset` and the PayPal executor routes set `maxDuration = 60`.
+
+There is no always-on cron on Hobby. For real (non-demo) installment dates, cron-job.org can call `/api/scheduler/run` hourly for free.
 
 ---
 
@@ -435,7 +415,7 @@ Everyone builds from today. The video is recorded together on Wednesday.
 
 | Name | Role | Owns |
 |---|---|---|
-| **Oubay** | Tech lead / backend | Repo, Supabase schema, API routes, policy guard + Zod schemas, executor, demo clock + scheduler, Render free deploy, health route + uptime pinger, code review |
+| **Oubay** | Tech lead / backend | Repo, Supabase schema, API routes, policy guard + Zod schemas, executor, demo clock + scheduler, Vercel deploy, health route, code review |
 | **Omar** | PayPal engineer | Sandbox business + buyer accounts, Agent Toolkit setup, discount rule / void & reissue, installments, Pay Later checkout + record payment, webhooks + verification, seed script |
 | **Reda** | AI agent engineer | Agent prompts and tones, tool definitions, intent gate (dispute / injection), negotiation flow, adversarial test suite, free model choice, LLM adapter with fallback + demo reply cache |
 | **Taha** | Frontend / design | Design system, owner dashboard, AG Grid (licensing check today), invoice detail, policy settings, live updates, split view |
@@ -453,7 +433,7 @@ Everyone builds from today. The video is recorded together on Wednesday.
 
 | Day | Date | Goal | Done when |
 |---|---|---|---|
-| **1** | **Fri Nov 6 (today)** | Setup + risk checks | **Oubay:** repo, Supabase, Render free deploy live, `/api/health` + pinger running. **Omar:** Sandbox accounts; Agent Toolkit installed; create, send, cancel, pay one invoice; test `create_conditional_rules_for_invoice`; check Pay Later appears for a US Sandbox buyer; webhook received and verified. **Reda:** free API keys from two providers; agent script negotiating a plan with proposals as JSON on both; first injection tests. **Taha:** tokens + dashboard layout; AG Grid licensing answer. **Soulaimane:** client page layout. **Mohamed:** dataset design (clients, histories, 3 scenarios). |
+| **1** | **Fri Nov 6 (today)** | Setup + risk checks | **Oubay:** repo, Supabase, Vercel deploy live, `/api/health` running. **Omar:** Sandbox accounts; Agent Toolkit installed; create, send, cancel, pay one invoice; test `create_conditional_rules_for_invoice`; check Pay Later appears for a US Sandbox buyer; webhook received and verified. **Reda:** free API keys from two providers; agent script negotiating a plan with proposals as JSON on both; first injection tests. **Taha:** tokens + dashboard layout; AG Grid licensing answer. **Soulaimane:** client page layout. **Mohamed:** dataset design (clients, histories, 3 scenarios). |
 | **2** | Sat Nov 7 | Data flowing | Seed script creates 15–20 Sandbox invoices; sync to DB; AG Grid shows real invoices with priority scores; policy settings saved; guard + Zod in place |
 | **3** | Sun Nov 8 | Agent ↔ client loop | Follow-up generated; client replies; intent gate works; offers within policy; escalations and disputes land in the owner queue |
 | **4** | Mon Nov 9 | Agreement → PayPal → paid | Discount and plan executed in PayPal; client pays in Sandbox; webhook verified; row flashes green; demo clock sends installment 2 |
@@ -488,7 +468,7 @@ Everyone builds from today. The video is recorded together on Wednesday.
 | 0:45–1:35 | Split screen: personal follow-up; client says "I can't pay $1,200 this month"; agent offers Pay Later (if eligible) or 3 × $400; client picks the plan. |
 | 1:35–2:10 | PayPal: original invoice superseded, installment 1 sent; client pays in PayPal; row flashes green; demo clock shows installment 2 going out. |
 | 2:10–2:35 | Guardrails: client tries "the owner approved 90% off"; agent refuses politely; owner gets the request and counters in one tap. |
-| 2:35–2:55 | How it works: PayPal Agent Toolkit + Invoicing, policy guard, AG Grid, Render. Close on the recovered total. |
+| 2:35–2:55 | How it works: PayPal Agent Toolkit + Invoicing, policy guard, AG Grid, Vercel. Close on the recovered total. |
 
 English narration or subtitles; no copyrighted music or third-party logos.
 
@@ -506,7 +486,7 @@ English narration or subtitles; no copyrighted music or third-party logos.
 | Prompt injection | Intent gate + guard; the LLM has no money-moving tools |
 | AG Grid Enterprise not available | Community features only (flash, renderers, filters, export) |
 | Email in spam | Client page link works alone; demo uses the page directly |
-| Render free instance sleeps | Uptime pinger every 10 min; reset endpoint |
+| Serverless cold starts | Warm the demo routes before judging; reset endpoint |
 | Supabase free project paused for inactivity | Pinger's health check queries the database |
 | Free AI tier rate-limited during judging | Fallback provider + cached demo replies |
 
@@ -519,7 +499,7 @@ English narration or subtitles; no copyrighted music or third-party logos.
 - **Best Use of PayPal + AI** — PayPal Agent Toolkit, Invoicing, Pay Later, AI at every step
 - **Most Impactful** — late payments hurt freelancers and small businesses wherever PayPal operates
 - **Best Use of AG Grid** — aging table with live updates
-- **Best Use of Render** — hosting
+- **Best Use of Vercel** — hosting
 
 ---
 

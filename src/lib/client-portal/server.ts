@@ -34,6 +34,28 @@ export async function getClientPortalPayload(token: string): Promise<ClientPorta
     throw new ConversationNotFoundError();
   }
 
+  // Accepting a discount reissues the invoice and moves the conversation to the
+  // child. The arrangement still points at the parent, so look at both plus the
+  // conversation itself — otherwise the client sees "No options yet" right after
+  // accepting an offer.
+  const invoiceIds = new Set<string>([invoice.id]);
+
+  if (invoice.parent_invoice_id) {
+    // parent_invoice_id stores the PayPal invoice ID, not the database UUID.
+    const { data: parentInvoice } = await supabase
+      .from('invoices')
+      .select('id')
+      .eq('paypal_invoice_id', invoice.parent_invoice_id)
+      .maybeSingle();
+
+    if (parentInvoice?.id) invoiceIds.add(parentInvoice.id);
+  }
+
+  const offersFilter = [
+    `conversation_id.eq.${conversation.id}`,
+    `invoice_id.in.(${[...invoiceIds].join(',')})`,
+  ].join(',');
+
   const [demoNow, messagesResult, offersResult, payable] = await Promise.all([
     getDemoNow(),
     supabase
@@ -44,7 +66,7 @@ export async function getClientPortalPayload(token: string): Promise<ClientPorta
     supabase
       .from('arrangements')
       .select('*, installments(*)')
-      .eq('invoice_id', invoice.id)
+      .or(offersFilter)
       .in('status', ['PROPOSED', 'PENDING_APPROVAL', 'ACCEPTED'])
       .order('created_at', { ascending: false }),
     // A failed payable lookup must not take down the whole client page.

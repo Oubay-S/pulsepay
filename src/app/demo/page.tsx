@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Smartphone, Sparkles, ExternalLink, RefreshCw } from "lucide-react";
+import { ArrowLeft, Smartphone, Sparkles, ExternalLink } from "lucide-react";
 import OwnerDashboard from "../page";
 
 export default function DemoSplitViewPage() {
@@ -11,17 +11,17 @@ export default function DemoSplitViewPage() {
   const scenarios = [
     {
       token: "demo-inv2-marcus-002",
-      name: "Marcus Rivera ($1,200)",
+      name: "Marcus Reed ($1,200)",
       story: "Can't pay in full → 3×$400 staged plan",
     },
     {
-      token: "demo-inv2-sarah-001",
-      name: "Sarah Chen ($850)",
+      token: "demo-inv2-elena-001",
+      name: "Elena Rostova ($850)",
       story: "Forgot invoice → friendly reminder → full payment",
     },
     {
       token: "demo-inv2-alex-003",
-      name: "Alex Thompson ($3,500)",
+      name: "Julian Hayes ($3,500)",
       story: "Aggressive concession → Guard blocks → Owner counter",
     },
   ];
