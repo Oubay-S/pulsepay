@@ -42,7 +42,7 @@ export function KpiStrip({ kpis, loading }: KpiStripProps) {
       icon: AlertCircle,
       tint: "text-[var(--pp-overdue)]",
       bgTint: "bg-[var(--pp-overdue-soft)]",
-      borderAccent: "border-l-4 border-l-[var(--pp-overdue)]",
+      borderAccent: "",
     },
     {
       id: "recovered",
@@ -52,7 +52,7 @@ export function KpiStrip({ kpis, loading }: KpiStripProps) {
       icon: CheckCircle2,
       tint: "text-[var(--pp-recovered)]",
       bgTint: "bg-[var(--pp-recovered-soft)]",
-      borderAccent: "border-l-4 border-l-[var(--pp-recovered)]",
+      borderAccent: "",
     },
     {
       id: "approval",

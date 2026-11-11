@@ -10,7 +10,7 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: #ffffff;
+  background: var(--pp-bg);
 }
 
 .ap-mono {
@@ -31,8 +31,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  background: var(--pp-surface);
-  box-shadow: 0 1px 0 var(--pp-line);
+  background: var(--pp-primary);
 }
 
 .ap-brand {
@@ -47,9 +46,9 @@
   flex: 0 0 34px;
   display: grid;
   place-items: center;
-  border-radius: 9px;
-  background: var(--pp-primary);
-  color: #fff;
+  border-radius: 4px;
+  background: var(--pp-lime);
+  color: var(--pp-primary);
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -59,13 +58,14 @@
   font-size: 13.5px;
   font-weight: 600;
   letter-spacing: -0.015em;
+  color: #FCFCFC;
 }
 
 .ap-brand__sub {
   margin-top: 1px;
   font-size: 10.5px;
   font-weight: 500;
-  color: var(--pp-ink-faint);
+  color: rgba(252, 252, 252, 0.7);
 }
 
 .ap-topbar__right {
@@ -76,11 +76,11 @@
 
 .ap-demo-time {
   font-size: 10.5px;
-  color: var(--pp-ink-faint);
+  color: rgba(252, 252, 252, 0.7);
 }
 
 .ap-demo-time strong {
-  color: var(--pp-ink-soft);
+  color: #FCFCFC;
   font-weight: 600;
 }
 
@@ -104,10 +104,11 @@
 }
 
 .ap-hero h1 {
+  font-family: var(--pp-font-display);
   font-size: clamp(28px, 3.6vw, 36px);
-  font-weight: 600;
-  line-height: 1.08;
-  letter-spacing: -0.04em;
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
@@ -629,7 +630,7 @@
   min-height: 44px;
   padding: 0 16px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 4px;
   font: inherit;
   font-size: 12px;
   font-weight: 600;
@@ -653,7 +654,7 @@
 
 .ap-btn--primary {
   background: var(--pp-primary);
-  color: #fff;
+  color: var(--pp-on-primary);
 }
 
 .ap-btn--primary:hover:not(:disabled) {
@@ -661,9 +662,9 @@
 }
 
 .ap-btn--secondary {
-  border-color: var(--pp-line);
+  border-color: var(--pp-primary);
   background: transparent;
-  color: var(--pp-ink);
+  color: var(--pp-primary);
 }
 
 .ap-btn--secondary:hover:not(:disabled) {
@@ -671,14 +672,24 @@
 }
 
 .ap-btn--ghost {
-  border-color: var(--pp-line);
+  border-color: var(--pp-primary);
   background: transparent;
-  color: var(--pp-ink-soft);
+  color: var(--pp-primary);
 }
 
 .ap-btn--ghost:hover:not(:disabled) {
   background: var(--pp-surface-muted);
-  color: var(--pp-ink);
+  color: var(--pp-primary);
+}
+
+.ap-topbar .ap-btn--ghost {
+  border-color: rgba(252, 252, 252, 0.3);
+  color: #FCFCFC;
+}
+
+.ap-topbar .ap-btn--ghost:hover:not(:disabled) {
+  background: rgba(252, 252, 252, 0.1);
+  color: #FCFCFC;
 }
 
 .ap-btn--danger {
@@ -695,7 +706,7 @@
   min-height: 32px;
   padding: 0 12px;
   font-size: 10.5px;
-  border-radius: 999px;
+  border-radius: 4px;
 }
 
 .ap-btn:disabled {

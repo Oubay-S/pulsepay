@@ -26,14 +26,14 @@ ModuleRegistry.registerModules([AllCommunityModule, ValidationModule]);
 const customTheme = themeQuartz.withParams({
   rowHeight: 64,
   headerHeight: 46,
-  borderRadius: 14,
+  borderRadius: 10,
   wrapperBorder: true,
-  borderColor: "#eceff3",
+  borderColor: "#E4E8DA",
   rowBorder: true,
-  headerBackgroundColor: "#f8f9fb",
-  headerTextColor: "#667085",
-  backgroundColor: "#ffffff",
-  foregroundColor: "#0b1220",
+  headerBackgroundColor: "#EEF2E3",
+  headerTextColor: "#5F6862",
+  backgroundColor: "#FFFFFF",
+  foregroundColor: "#242524",
   cellHorizontalPadding: 16,
 });
 
@@ -294,7 +294,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
             <button
               onClick={() => handleTriggerFollowUp(id)}
               disabled={isTriggering}
-              className="apple-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-[var(--pp-accent-soft)] hover:bg-[var(--pp-accent-tint)] text-[var(--pp-accent)] border border-[var(--pp-accent-border)] disabled:opacity-50"
+              className="apple-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-semibold bg-[var(--pp-accent-soft)] hover:bg-[var(--pp-accent-tint)] text-[var(--pp-accent)] border border-[var(--pp-accent-border)] disabled:opacity-50"
             >
               {isTriggering ? (
                 <>
@@ -335,15 +335,15 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
     <div className="flex flex-col gap-3">
       {/* Table Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Bucket Segmented Control (Quiet Ledger Pill Style) */}
-        <div className="inline-flex p-1 rounded-xl bg-[var(--pp-surface)] border border-[var(--pp-line)] shadow-sm">
+        {/* Bucket Segmented Control */}
+        <div className="inline-flex p-1 rounded-[10px] bg-[var(--pp-surface)] border border-[var(--pp-line)]">
           {buckets.map((b) => (
             <button
               key={b.key}
               onClick={() => setActiveBucket(b.key)}
-              className={`apple-press px-3.5 py-1.5 text-[12px] font-semibold rounded-lg transition-all ${
+              className={`apple-press px-3.5 py-1.5 text-[12px] font-semibold rounded-[4px] transition-all ${
                 activeBucket === b.key
-                  ? "bg-[var(--pp-primary)] text-white shadow-sm"
+                  ? "bg-[var(--pp-primary)] text-[var(--pp-on-primary)]"
                   : "text-[var(--pp-ink-soft)] hover:text-[var(--pp-ink)]"
               }`}
             >
@@ -361,14 +361,14 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
               placeholder="Search clients or invoices..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-3.5 py-1.5 text-[12.5px] bg-[var(--pp-surface)] border border-[var(--pp-line)] rounded-xl text-[var(--pp-ink)] placeholder:text-[var(--pp-ink-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--pp-accent)] transition-all shadow-sm w-56 sm:w-64"
+              className="pl-9 pr-3.5 py-1.5 text-[12.5px] bg-[var(--pp-surface)] border border-[var(--pp-line)] rounded-[10px] text-[var(--pp-ink)] placeholder:text-[var(--pp-ink-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--pp-accent)] transition-all w-56 sm:w-64"
             />
           </div>
 
           <button
             onClick={handleExportCsv}
             title="Export CSV"
-            className="apple-press inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-[var(--pp-ink-soft)] hover:text-[var(--pp-ink)] bg-[var(--pp-surface)] border border-[var(--pp-line)] rounded-xl shadow-sm hover:border-[var(--pp-line-strong)]"
+            className="apple-press inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-[var(--pp-ink-soft)] hover:text-[var(--pp-ink)] bg-[var(--pp-surface)] border border-[var(--pp-line)] rounded-[4px] hover:border-[var(--pp-line-strong)]"
           >
             <Download className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Export</span>
@@ -377,7 +377,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
       </div>
 
       {/* Grid Container */}
-      <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-[var(--pp-line)] bg-[var(--pp-surface)] shadow-sm">
+      <div className="w-full h-[520px] rounded-[10px] overflow-hidden border border-[var(--pp-line)] bg-[var(--pp-surface)]">
         <AgGridReact
           ref={gridRef}
           theme={customTheme}

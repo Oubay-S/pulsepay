@@ -62,19 +62,19 @@ export function buildFollowUpEmail(input: FollowUpEmailInput): FollowUpEmailCont
 
   const html = `<!doctype html>
 <html lang="en">
-  <body style="margin:0;padding:0;background:#f3f6fb;font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f6fb;padding:28px 12px;">
+  <body style="margin:0;padding:0;background:#F4F6EE;font-family:Inter,Segoe UI,Arial,sans-serif;color:#242524;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F6EE;padding:28px 12px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e1e8f2;border-radius:16px;overflow:hidden;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border:1px solid #E4E8DA;border-radius:10px;overflow:hidden;">
             <tr>
               <td style="padding:22px 26px 0;">
                 <table role="presentation" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="width:38px;height:38px;border-radius:11px;background:#2453d6;color:#ffffff;font-size:12px;font-weight:800;text-align:center;vertical-align:middle;">PP</td>
+                    <td style="width:38px;height:38px;border-radius:4px;background:#043F2E;color:#C8F169;font-size:12px;font-weight:800;text-align:center;vertical-align:middle;">PP</td>
                     <td style="padding-left:10px;">
-                      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8493a8;">PulsePay</div>
-                      <div style="font-size:13px;font-weight:700;color:#0f172a;">${escapeHtml(
+                      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#5F6862;">PulsePay</div>
+                      <div style="font-size:13px;font-weight:700;color:#242524;">${escapeHtml(
                         input.businessName
                       )}</div>
                     </td>
@@ -85,22 +85,22 @@ export function buildFollowUpEmail(input: FollowUpEmailInput): FollowUpEmailCont
             <tr>
               <td style="padding:20px 26px 0;">
                 <p style="margin:0;font-size:15px;line-height:1.55;">Hi ${escapeHtml(firstName)},</p>
-                <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#5a6b84;">
+                <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#4A524C;">
                   ${escapeHtml(input.businessName)} asked us to follow up on invoice
-                  <strong style="color:#0f172a;">${escapeHtml(input.invoiceNumber)}</strong>.
+                  <strong style="color:#242524;">${escapeHtml(input.invoiceNumber)}</strong>.
                 </p>
               </td>
             </tr>
             <tr>
               <td style="padding:18px 26px 0;">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e1e8f2;border-radius:12px;background:#f7f9fd;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E4E8DA;border-radius:10px;background:#F4F6EE;">
                   <tr>
                     <td style="padding:14px 16px;">
-                      <div style="font-size:9px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#8493a8;">Invoice amount</div>
-                      <div style="margin-top:3px;font-size:28px;font-weight:800;letter-spacing:-0.03em;color:#0f172a;">${escapeHtml(
+                      <div style="font-size:9px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#5F6862;">Invoice amount</div>
+                      <div style="margin-top:3px;font-size:28px;font-weight:800;letter-spacing:-0.03em;color:#242524;">${escapeHtml(
                         amount
                       )}</div>
-                      <div style="margin-top:3px;font-size:11px;color:#5a6b84;">Due ${escapeHtml(
+                      <div style="margin-top:3px;font-size:11px;color:#4A524C;">Due ${escapeHtml(
                         dueDate
                       )}</div>
                     </td>
@@ -110,7 +110,7 @@ export function buildFollowUpEmail(input: FollowUpEmailInput): FollowUpEmailCont
             </tr>
             <tr>
               <td style="padding:18px 26px 0;">
-                <p style="margin:0;font-size:13.5px;line-height:1.6;color:#5a6b84;">
+                <p style="margin:0;font-size:13.5px;line-height:1.6;color:#4A524C;">
                   If you have a question about the work or need more time to pay, reply on your
                   private page. You will see any options that fit the business rules.
                 </p>
@@ -120,12 +120,12 @@ export function buildFollowUpEmail(input: FollowUpEmailInput): FollowUpEmailCont
               <td style="padding:20px 26px 0;">
                 <a href="${escapeHtml(
                   input.url
-                )}" style="display:inline-block;padding:12px 18px;border-radius:9px;background:#2453d6;color:#ffffff;font-size:13px;font-weight:700;text-decoration:none;">View invoice &amp; reply</a>
+                )}" style="display:inline-block;padding:12px 18px;border-radius:4px;background:#043F2E;color:#C8F169;font-size:13px;font-weight:700;text-decoration:none;">View invoice &amp; reply</a>
               </td>
             </tr>
             <tr>
               <td style="padding:22px 26px 24px;">
-                <p style="margin:0;font-size:11px;line-height:1.55;color:#8493a8;">
+                <p style="margin:0;font-size:11px;line-height:1.55;color:#5F6862;">
                   If you have already paid, please ignore this message. This private link was sent
                   by PulsePay on behalf of ${escapeHtml(input.businessName)}.
                 </p>

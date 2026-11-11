@@ -160,16 +160,16 @@ export default function OwnerDashboard() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--pp-bg-deep)] text-[var(--pp-ink)]">
+    <div className="min-h-screen flex flex-col bg-[var(--pp-bg)] text-[var(--pp-ink)]">
 
-      {/* ── Top Glass Header ─────────────────────────────────────────────── */}
-      <header className="glass-nav-light sticky top-0 z-40 px-4 sm:px-6 py-3 flex items-center justify-between">
+      {/* ── Top Colour-Blocked Header (Mode signature) ───────────────────── */}
+      <header className="glass-nav-light bg-[var(--pp-primary)] sticky top-0 z-40 px-4 sm:px-6 py-3 flex items-center justify-between">
         {/* Left: Logo + Mobile hamburger */}
         <div className="flex items-center gap-3">
           {/* Mobile sidebar toggle */}
           <button
             onClick={() => setSidebarOpen((v) => !v)}
-            className="apple-press lg:hidden p-2 rounded-xl text-[var(--pp-ink-soft)] hover:text-[var(--pp-ink)] hover:bg-[var(--pp-surface-muted)] border border-[var(--pp-line)]"
+            className="apple-press lg:hidden p-2 rounded-[4px] text-[#FCFCFC] hover:bg-white/10 border border-[rgba(252,252,252,0.3)]"
             aria-label="Toggle navigation"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
@@ -180,19 +180,19 @@ export default function OwnerDashboard() {
           </button>
 
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--pp-primary)] text-white flex items-center justify-center font-bold text-sm shadow-sm select-none">
+            <div className="w-8 h-8 rounded-[4px] bg-[var(--pp-lime)] text-[var(--pp-primary)] flex items-center justify-center font-bold text-sm select-none">
               P
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-[15px] tracking-tight text-[var(--pp-ink)]">
+                <span className="pp-display text-[20px] text-[#FCFCFC]">
                   PulsePay
                 </span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--pp-accent-soft)] text-[var(--pp-accent)] border border-[var(--pp-accent-border)]">
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--pp-lime-soft)] text-[var(--pp-primary)]">
                   <Zap className="w-3 h-3 fill-current" /> PayPal AI
                 </span>
               </div>
-              <span className="text-[11px] text-[var(--pp-ink-faint)] hidden sm:inline">
+              <span className="text-[11px] text-[#FCFCFC]/70 hidden sm:inline">
                 Receivables Recovery &amp; Autonomous Invoicing
               </span>
             </div>
@@ -212,14 +212,14 @@ export default function OwnerDashboard() {
             onClick={() => fetchData(true)}
             disabled={refreshing}
             title="Refresh receivables"
-            className="apple-press p-2 rounded-xl text-[var(--pp-ink-soft)] hover:text-[var(--pp-ink)] bg-[var(--pp-surface)] border border-[var(--pp-line)] shadow-sm disabled:opacity-50"
+            className="apple-press p-2 rounded-[4px] text-[#FCFCFC] bg-transparent border border-[rgba(252,252,252,0.3)] hover:bg-white/10 disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
           </button>
 
           <a
             href="/demo"
-            className="apple-press hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[12.5px] font-bold rounded-xl text-white bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] shadow-sm"
+            className="apple-press hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[12.5px] font-bold rounded-[4px] text-[var(--pp-primary)] bg-[var(--pp-lime)] hover:bg-[var(--pp-lime-soft)]"
           >
             <span>Judge Split View</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -234,7 +234,7 @@ export default function OwnerDashboard() {
         {sidebarOpen && (
           <div
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 z-30 bg-slate-900/30 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-30 bg-[#043F2E]/30 backdrop-blur-sm lg:hidden"
             style={{ animation: "pp-fade-in 200ms ease both" }}
           />
         )}
@@ -245,7 +245,7 @@ export default function OwnerDashboard() {
             "fixed lg:static inset-y-0 left-0 z-40",
             "flex flex-col",
             "w-56 shrink-0",
-            "bg-[var(--pp-surface)] border-r border-[var(--pp-line)]",
+            "bg-[var(--pp-bg)] border-r border-[var(--pp-line)]",
             // Mobile: slide in/out from left
             "transition-transform duration-[280ms]",
             "ease-[cubic-bezier(0.16,1,0.3,1)]",
@@ -465,7 +465,7 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle: string })
   return (
     <div className="flex flex-col gap-1">
       <h1
-        className="text-[24px] font-bold tracking-tight text-[var(--pp-ink)] leading-tight"
+        className="pp-display text-[36px] text-[var(--pp-ink)]"
         dangerouslySetInnerHTML={{ __html: title }}
       />
       <p className="text-[13px] text-[var(--pp-ink-soft)]">{subtitle}</p>

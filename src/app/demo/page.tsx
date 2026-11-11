@@ -33,7 +33,7 @@ export default function DemoSplitViewPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="apple-press inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-[var(--pp-ink-soft)] hover:text-[var(--pp-ink)] rounded-lg bg-[var(--pp-surface-muted)] border border-[var(--pp-line)] shadow-sm"
+            className="apple-press inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-[var(--pp-ink-soft)] hover:text-[var(--pp-ink)] rounded-[4px] bg-[var(--pp-surface-muted)] border border-[var(--pp-line)]"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Dashboard
           </Link>
@@ -45,18 +45,18 @@ export default function DemoSplitViewPage() {
         </div>
 
         {/* Scenario Switcher */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 max-w-full">
           <span className="text-[12px] font-semibold text-[var(--pp-ink-soft)] hidden sm:inline">
             Active Scenario:
           </span>
-          <div className="inline-flex p-1 rounded-xl bg-[var(--pp-surface-muted)] border border-[var(--pp-line)]">
+          <div className="inline-flex flex-wrap p-1 rounded-[10px] bg-[var(--pp-surface-muted)] border border-[var(--pp-line)]">
             {scenarios.map((s) => (
               <button
                 key={s.token}
                 onClick={() => setSelectedToken(s.token)}
-                className={`apple-press px-3 py-1 text-[12px] font-semibold rounded-lg transition-all ${
+                className={`apple-press px-3 py-1 text-[12px] font-semibold rounded-[4px] transition-all ${
                   selectedToken === s.token
-                    ? "bg-[var(--pp-primary)] text-white shadow-sm"
+                    ? "bg-[var(--pp-primary)] text-[var(--pp-on-primary)]"
                     : "text-[var(--pp-ink-soft)] hover:text-[var(--pp-ink)]"
                 }`}
               >

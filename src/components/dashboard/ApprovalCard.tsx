@@ -109,7 +109,7 @@ export function ApprovalCard({ approval, onActionComplete }: ApprovalCardProps) 
         <button
           onClick={() => handleAction("reject")}
           disabled={submitting}
-          className="apple-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-[var(--pp-ink-soft)] hover:text-[var(--pp-overdue)] hover:bg-[var(--pp-overdue-soft)] transition-colors disabled:opacity-50"
+          className="apple-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-semibold text-[var(--pp-ink-soft)] hover:text-[var(--pp-overdue)] hover:bg-[var(--pp-overdue-soft)] transition-colors disabled:opacity-50"
         >
           <X className="w-3.5 h-3.5" /> Reject
         </button>
@@ -118,7 +118,7 @@ export function ApprovalCard({ approval, onActionComplete }: ApprovalCardProps) 
           onClick={() => handleAction("approve")}
           disabled={submitting || !isExecutable}
           title={!isExecutable ? "Client requests cannot be executed directly. Reject or counter." : undefined}
-          className="apple-press inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[12px] font-bold bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          className="apple-press inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-[12px] font-bold bg-[var(--pp-primary)] hover:bg-[var(--pp-primary-strong)] text-[var(--pp-on-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {submitting ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
