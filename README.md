@@ -124,7 +124,7 @@ npm run seed
 ```bash
 npm run dev
 ```
-Visit `http://localhost:3000` for the dashboard and `http://localhost:3000/api/health` for the system status.
+Visit `http://localhost:3000` for the product page, `http://localhost:3000/dashboard` for the owner dashboard, and `http://localhost:3000/api/health` for the system status.
 
 ---
 

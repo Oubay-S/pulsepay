@@ -91,12 +91,14 @@ export function InvoiceDetailDrawer({ invoice, onClose }: InvoiceDetailDrawerPro
       {/* Scrim */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-[#043F2E]/40 backdrop-blur-sm transition-opacity duration-300 animate-fade-in"
+        className="pp-scrim fixed inset-0 bg-[#043F2E]/40"
       />
 
       {/* Drawer Panel */}
       <div
-        className="relative z-10 w-full max-w-lg bg-[var(--pp-surface)] border-l border-[var(--pp-line)] shadow-2xl flex flex-col h-full transform transition-transform duration-300 ease-out"
+        role="dialog"
+        aria-modal="true"
+        className="pp-drawer relative z-10 w-full max-w-lg bg-[var(--pp-surface)] border-l border-[var(--pp-line)] shadow-[var(--pp-shadow-lg)] flex flex-col h-full"
       >
         {/* Header */}
         <div className="p-5 border-b border-[var(--pp-line)] bg-[var(--pp-surface)] flex items-center justify-between">

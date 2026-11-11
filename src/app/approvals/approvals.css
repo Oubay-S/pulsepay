@@ -26,7 +26,7 @@
   top: 0;
   z-index: 20;
   width: 100%;
-  padding: 14px max(20px, calc((100% - 1120px) / 2 + 20px)) 12px;
+  padding: 14px max(20px, calc((100% - 1400px) / 2 + 20px)) 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -74,21 +74,11 @@
   gap: 12px;
 }
 
-.ap-demo-time {
-  font-size: 10.5px;
-  color: rgba(252, 252, 252, 0.7);
-}
-
-.ap-demo-time strong {
-  color: #FCFCFC;
-  font-weight: 600;
-}
-
 /* ---------- Main ---------- */
 
 .ap-main {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 18px 20px 40px;
 }
@@ -105,10 +95,10 @@
 
 .ap-hero h1 {
   font-family: var(--pp-font-display);
-  font-size: clamp(28px, 3.6vw, 36px);
+  font-size: clamp(40px, 4vw, 54px);
   font-weight: 400;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  line-height: 1;
+  letter-spacing: -0.025em;
   text-wrap: balance;
 }
 
@@ -639,12 +629,12 @@
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
-    transform 0.1s ease,
+    transform 160ms var(--pp-ease-out),
     opacity 0.15s ease;
 }
 
 .ap-btn:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.97);
 }
 
 .ap-btn:focus-visible {
@@ -1022,7 +1012,7 @@
 /* ---------- Footer ---------- */
 
 .ap-footer {
-  max-width: 1120px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px 28px;
   display: flex;
@@ -1078,10 +1068,6 @@
 @media (max-width: 640px) {
   .ap-topbar {
     padding: 12px 13px 10px;
-  }
-
-  .ap-demo-time {
-    display: none;
   }
 
   .ap-main {

@@ -41,17 +41,18 @@ export function LiveToast({ onPaymentReceived }: LiveToastProps) {
   if (!toastMessage) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 animate-bounce-in max-w-md">
-      <div className="p-4 rounded-2xl bg-[var(--surface-raised)] border border-[var(--recovered-border)] shadow-2xl flex items-center gap-3 backdrop-blur-xl">
-        <div className="w-9 h-9 rounded-xl bg-[var(--recovered-bg)] text-[var(--recovered)] flex items-center justify-center shrink-0">
+    <div role="status" aria-live="polite" className="pp-toast fixed bottom-6 right-6 z-50 max-w-md">
+      <div className="p-4 rounded-[10px] bg-[var(--pp-primary)] text-[#FCFCFC] flex items-center gap-3 shadow-[var(--pp-shadow-lg)]">
+        <div className="w-9 h-9 rounded-[4px] bg-[var(--pp-lime)] text-[var(--pp-primary)] flex items-center justify-center shrink-0">
           <CheckCircle2 className="w-5 h-5" />
         </div>
-        <div className="flex-1 text-[13px] font-semibold text-[var(--ink)] leading-snug">
+        <div className="flex-1 text-[13px] font-medium leading-snug">
           {toastMessage}
         </div>
         <button
           onClick={() => setToastMessage(null)}
-          className="apple-press p-1 rounded-lg text-[var(--ink-secondary)] hover:text-[var(--ink)]"
+          aria-label="Dismiss"
+          className="apple-press p-1 rounded-[4px] text-[#FCFCFC]/70 hover:text-[#FCFCFC]"
         >
           <X className="w-4 h-4" />
         </button>

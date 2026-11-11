@@ -274,8 +274,8 @@
   font-weight: 600;
   text-decoration: none;
   transition:
-    background 0.16s ease,
-    transform 0.1s ease;
+    background 0.15s ease,
+    transform 160ms var(--pp-ease-out);
 }
 
 .pp-pay-btn span {
@@ -292,7 +292,7 @@
 }
 
 .pp-pay-btn:active {
-  transform: translateY(1px);
+  transform: scale(0.98);
 }
 
 .pp-pay-btn > svg:first-of-type {
@@ -661,6 +661,14 @@
   margin: 12px 0;
 }
 
+/* Replies ease in instead of popping into the thread. The client's own
+   message appears instantly: it is a direct result of their action, and the
+   optimistic → saved swap would otherwise animate it twice. */
+.pp-msg--agent,
+.pp-msg--owner {
+  animation: pp-msg-in 220ms var(--pp-ease-out) both;
+}
+
 .pp-msg--client {
   margin-left: auto;
   flex-direction: row-reverse;
@@ -917,6 +925,15 @@
   padding: 18px 0;
   border-bottom: 1px solid var(--pp-line);
   background: transparent;
+  animation: pp-msg-in 260ms var(--pp-ease-out) both;
+}
+
+.pp-offer:nth-child(2) {
+  animation-delay: 50ms;
+}
+
+.pp-offer:nth-child(3) {
+  animation-delay: 100ms;
 }
 
 .pp-offer:last-child {
@@ -1364,11 +1381,16 @@
   cursor: pointer;
   transition:
     background 0.15s ease,
-    opacity 0.15s ease;
+    opacity 0.15s ease,
+    transform 160ms var(--pp-ease-out);
 }
 
 .pp-composer__send:hover:not(:disabled) {
   background: var(--pp-primary-strong);
+}
+
+.pp-composer__send:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
 .pp-composer__send:focus-visible {
@@ -1414,12 +1436,12 @@
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
-    transform 0.1s ease,
+    transform 160ms var(--pp-ease-out),
     opacity 0.15s ease;
 }
 
 .pp-btn:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.97);
 }
 
 .pp-btn:focus-visible {
@@ -1656,6 +1678,13 @@
 }
 
 /* ---------- Motion ---------- */
+
+@keyframes pp-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
 
 @keyframes pp-shimmer {
   0% {

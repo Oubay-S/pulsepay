@@ -179,7 +179,10 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
             currency: p.data?.currency || "USD",
           }).format(p.value || 0);
         },
-        cellClass: "tnum font-bold text-[var(--pp-ink)]",
+        // Setting cellClass replaces numericColumn's right-align class, so re-add it
+        // to line values up with the right-aligned header.
+        cellClass: "ag-right-aligned-cell tnum font-bold text-[var(--pp-ink)]",
+        headerClass: "ag-right-aligned-header",
       },
       {
         headerName: "Aging / Due",
@@ -191,7 +194,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
 
           if (isPaid) {
             return (
-              <div className="flex items-center h-full">
+              <div className="flex items-center h-full leading-normal">
                 <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold px-2.5 py-0.5 rounded-full border bg-[var(--pp-recovered-soft)] text-[var(--pp-recovered)] border-[var(--pp-recovered-border)]">
                   <Check className="w-3 h-3" /> Cleared
                 </span>
@@ -201,7 +204,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
 
           if (days <= 0) {
             return (
-              <div className="flex items-center h-full">
+              <div className="flex items-center h-full leading-normal">
                 <span className="inline-flex items-center gap-1 text-[11.5px] font-medium px-2.5 py-0.5 rounded-full border bg-[var(--pp-surface-muted)] text-[var(--pp-ink-soft)] border-[var(--pp-line)]">
                   <Calendar className="w-3 h-3" /> Due soon
                 </span>
@@ -211,7 +214,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
 
           const isSevere = days > 30;
           return (
-            <div className="flex items-center h-full">
+            <div className="flex items-center h-full leading-normal">
               <span
                 className={`text-[11.5px] font-bold tnum px-2.5 py-0.5 rounded-full border ${
                   isSevere
@@ -235,7 +238,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
             : null,
         cellRenderer: (p: ICellRendererParams) => {
           return (
-            <div className="flex items-center h-full">
+            <div className="flex items-center h-full leading-normal">
               <PriorityBadge
                 score={p.value ?? 0}
                 reason={p.data?.priority_reason}
@@ -250,7 +253,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
         width: 130,
         cellRenderer: (p: ICellRendererParams) => {
           return (
-            <div className="flex items-center h-full">
+            <div className="flex items-center h-full leading-normal">
               <StatusBadge status={p.value} />
             </div>
           );
@@ -269,7 +272,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
 
           if (isPaid) {
             return (
-              <div className="flex items-center h-full">
+              <div className="flex items-center h-full leading-normal">
                 <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold px-2.5 py-0.5 rounded-full bg-[var(--pp-recovered-soft)] text-[var(--pp-recovered)] border border-[var(--pp-recovered-border)]">
                   <Check className="w-3 h-3" /> Settled
                 </span>
@@ -283,7 +286,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
                 href={actionSuccessUrl.url}
                 target="_blank"
                 rel="noreferrer"
-                className="apple-press inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--pp-accent)] hover:underline"
+                className="apple-press inline-flex items-center gap-1 leading-none text-[12px] font-semibold text-[var(--pp-accent)] hover:underline"
               >
                 Open Portal <ExternalLink className="w-3 h-3" />
               </a>
@@ -294,7 +297,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
             <button
               onClick={() => handleTriggerFollowUp(id)}
               disabled={isTriggering}
-              className="apple-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-semibold bg-[var(--pp-accent-soft)] hover:bg-[var(--pp-accent-tint)] text-[var(--pp-accent)] border border-[var(--pp-accent-border)] disabled:opacity-50"
+              className="apple-press inline-flex items-center gap-1.5 px-3 py-1.5 leading-none rounded-[4px] text-[12px] font-semibold bg-[var(--pp-accent-soft)] hover:bg-[var(--pp-accent-tint)] text-[var(--pp-accent)] border border-[var(--pp-accent-border)] disabled:opacity-50"
             >
               {isTriggering ? (
                 <>
@@ -341,7 +344,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
             <button
               key={b.key}
               onClick={() => setActiveBucket(b.key)}
-              className={`apple-press px-3.5 py-1.5 text-[12px] font-semibold rounded-[4px] transition-all ${
+              className={`apple-press px-3.5 py-1.5 text-[12px] font-semibold rounded-[4px] ${
                 activeBucket === b.key
                   ? "bg-[var(--pp-primary)] text-[var(--pp-on-primary)]"
                   : "text-[var(--pp-ink-soft)] hover:text-[var(--pp-ink)]"
@@ -361,7 +364,7 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
               placeholder="Search clients or invoices..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-3.5 py-1.5 text-[12.5px] bg-[var(--pp-surface)] border border-[var(--pp-line)] rounded-[10px] text-[var(--pp-ink)] placeholder:text-[var(--pp-ink-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--pp-accent)] transition-all w-56 sm:w-64"
+              className="pl-9 pr-3.5 py-1.5 text-[12.5px] bg-[var(--pp-surface)] border border-[var(--pp-line)] rounded-[10px] text-[var(--pp-ink)] placeholder:text-[var(--pp-ink-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--pp-accent)] transition-[box-shadow,border-color] duration-150 w-56 sm:w-64"
             />
           </div>
 
@@ -377,7 +380,8 @@ export function AgingGrid({ invoices, loading, onRefresh, onSelectInvoice }: Agi
       </div>
 
       {/* Grid Container */}
-      <div className="w-full h-[520px] rounded-[10px] overflow-hidden border border-[var(--pp-line)] bg-[var(--pp-surface)]">
+      {/* Fill the remaining viewport height (header + title + toolbar ≈ 250px) */}
+      <div className="w-full h-[calc(100dvh-250px)] min-h-[420px] rounded-[10px] overflow-hidden border border-[var(--pp-line)] bg-[var(--pp-surface)]">
         <AgGridReact
           ref={gridRef}
           theme={customTheme}
