@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { verifyWebhookSignature } from '@/lib/paypal/webhooks';
+import { getPayPalInvoice } from '@/lib/paypal/toolkit';
+import {
+  isPartialInvoicePayment,
+  unwrapInvoiceResource,
+} from '@/lib/paypal/invoice-payment';
 import type { PayPalWebhookEvent } from '@/types/paypal';
 import type { InvoiceStatus } from '@/types/database';
 
@@ -268,21 +273,38 @@ async function handleInvoicePaid(
     return;
   }
 
-  // PayPal fires INVOICING.INVOICE.PAID for partial payments as well. Trust
-  // the resource status first, then fall back to comparing paid vs total.
-  const resourceStatus = asString(resource.status);
-  const paidAmount = Number(
-    asString(asRecord(asRecord(resource.payments).paid_amount).value)
-  );
-  const totalAmount = Number(asString(asRecord(resource.amount).value));
+  // PayPal sometimes nests the invoice under `resource.invoice`; support both.
+  const invoiceResource = unwrapInvoiceResource(resource);
 
-  const isPartial =
-    resourceStatus === 'PARTIALLY_PAID' ||
-    resourceStatus === 'PARTIALLY_REFUNDED' ||
-    (Number.isFinite(paidAmount) &&
-      Number.isFinite(totalAmount) &&
-      paidAmount > 0 &&
-      paidAmount < totalAmount);
+  let resourceStatus = asString(invoiceResource.status);
+  let paidAmount = Number(
+    asString(asRecord(asRecord(invoiceResource.payments).paid_amount).value)
+  );
+  let totalAmount = Number(asString(asRecord(invoiceResource.amount).value));
+
+  // If the payload does not carry enough detail to tell a full payment from a
+  // partial one, ask PayPal for the authoritative invoice state. Real Sandbox
+  // deliveries for partial payments do not always include `status`/`payments`.
+  if (!resourceStatus || !Number.isFinite(paidAmount)) {
+    try {
+      const liveInvoice = await getPayPalInvoice(paypalInvoiceId);
+      resourceStatus = liveInvoice.status ?? resourceStatus;
+
+      const livePaid = Number(liveInvoice.payments?.paid_amount?.value);
+      if (Number.isFinite(livePaid)) paidAmount = livePaid;
+
+      const liveTotal = Number(liveInvoice.amount?.value);
+      if (Number.isFinite(liveTotal)) totalAmount = liveTotal;
+    } catch {
+      // Keep the payload values; the amount comparison below still applies.
+    }
+  }
+
+  const isPartial = isPartialInvoicePayment({
+    status: resourceStatus,
+    paidAmount,
+    totalAmount,
+  });
 
   await markPaypalInvoicePaid(
     supabase,
