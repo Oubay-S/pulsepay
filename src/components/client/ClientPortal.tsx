@@ -461,6 +461,7 @@ export default function ClientPortal({
             businessName={data.businessName}
             demoNow={data.demoNow}
             paylater={data.paylater}
+            hasPayable={Boolean(data.payable)}
             onAccept={(id) => void handleAccept(id)}
             onCaptured={handleCaptured}
             acceptingId={acceptingId}
@@ -549,6 +550,7 @@ export default function ClientPortal({
               businessName={data.businessName}
               demoNow={data.demoNow}
               paylater={data.paylater}
+              hasPayable={Boolean(data.payable)}
               onAccept={(id) => void handleAccept(id)}
               onCaptured={handleCaptured}
               acceptingId={acceptingId}

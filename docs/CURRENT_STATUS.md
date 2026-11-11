@@ -1,19 +1,20 @@
 # PulsePay — Current Project Status & Team Handoff Guide
-> Date: Friday, November 6, 2026 (End of Day 1)  
-> Target: PayPal AI Hackathon 2026  
+> Date: Wednesday, November 11, 2026
+> Target: PayPal AI Hackathon 2026
 > Tech Lead: Oubay
 
 ---
 
 ## 1. Executive Summary
 
-As of the end of Day 1, the foundational backend architecture, database schema, policy guardrails, automated test suite, CI/CD pipeline, and cloud deployment are **100% operational and live in production**.
+PulsePay is deployed and running real PayPal Sandbox flows end to end: invoice → agent negotiation → PayPal → verified webhook → dashboard.
 
 - **Repository**: [https://github.com/Oubay-S/pulsepay](https://github.com/Oubay-S/pulsepay) (Public)
 - **Live Production URL**: [https://pulsepay-rho.vercel.app](https://pulsepay-rho.vercel.app)
 - **Database**: Supabase PostgreSQL + Realtime deployed in Frankfurt (`eu-central-1`)
-- **CI Status**: GitHub Actions CI is 100% green on all branches
-- **Test Suite**: 17 passing unit tests (Policy Guard, Intent Gate, Scoring)
+- **CI Status**: GitHub Actions CI is green on `main`
+- **Test Suite**: 37 passing unit tests (Policy Guard, Intent Gate, Scoring, portal normalization, approvals, email)
+- **PayPal**: Sandbox only — real invoices, discounts, installment plans, Pay Later, and signed webhooks. No mocks.
 
 ---
 
@@ -26,7 +27,7 @@ The backend is deployed serverless on Vercel and connected directly to the live 
 | **Health Check** | [https://pulsepay-rho.vercel.app/api/health](https://pulsepay-rho.vercel.app/api/health) | Database keep-alive and system status (returns `status: "ok"`) |
 | **Invoices & KPIs** | [https://pulsepay-rho.vercel.app/api/invoices](https://pulsepay-rho.vercel.app/api/invoices) | Feeds the owner dashboard AG Grid with computed metrics |
 | **PayPal Webhook** | `https://pulsepay-rho.vercel.app/api/paypal/webhook` | HTTPS webhook endpoint for PayPal Sandbox notifications |
-| **Client Portal Demo** | [https://pulsepay-rho.vercel.app/api/c/demo-inv2-sarah-001](https://pulsepay-rho.vercel.app/api/c/demo-inv2-sarah-001) | API data for Sarah Chen's $850 invoice conversation |
+| **Client Portal Demo** | [https://pulsepay-rho.vercel.app/c/demo-inv2-elena-001](https://pulsepay-rho.vercel.app/c/demo-inv2-elena-001) | Elena Rostova's $850 invoice conversation (client page) |
 | **Demo Clock** | `https://pulsepay-rho.vercel.app/api/demo/clock` | Time simulation endpoint (`GET` to check, `POST` to advance days) |
 | **Approvals Queue** | `https://pulsepay-rho.vercel.app/api/approvals` | List of proposals pending owner approval or disputed work |
 
@@ -37,10 +38,17 @@ The backend is deployed serverless on Vercel and connected directly to the live 
 The live database contains the 11 tables required by the specification:
 - `businesses`, `policies`, `clients`, `invoices`, `conversations`, `messages`, `arrangements`, `installments`, `events`, `processed_events`, `demo_clock`.
 - **Supabase Realtime** is active on `invoices`, `arrangements`, `installments`, `messages`, and `events`.
-- **Pre-seeded Hackathon Scenarios**:
-  1. **Sarah Chen** (`INV2-SARAH-001`): $850, 7 days overdue, 90% on-time client history (Priority Score: 35). Token: `demo-inv2-sarah-001`.
-  2. **Marcus Rivera** (`INV2-MARCUS-002`): $1,200, 15 days overdue, 60% on-time client history (Priority Score: 48). Token: `demo-inv2-marcus-002`.
-  3. **Alex Thompson** (`INV2-ALEX-003`): $3,500, 30 days overdue, 40% on-time client history (Priority Score: 80). Token: `demo-inv2-alex-003`.
+- **Seeded demo business**: **Studio Chen Creative LLC** — 8 clients, 8 real PayPal Sandbox invoices (no fake IDs):
+  1. **Elena Rostova** — $850, 7 days overdue. Token: `demo-inv2-elena-001`.
+  2. **Marcus Reed** — $1,200, 18 days overdue. Token: `demo-inv2-marcus-002`.
+  3. **Julian Hayes** — $3,500, 35 days overdue, has a **pending owner approval**. Token: `demo-inv2-alex-003`.
+  4. **Dr. Aris Thorne** — $2,800, 48 days overdue, partly paid. Token: `demo-inv2-kroma-004`.
+  5. **Nadia Benali** — $650, 12 days overdue. Token: `demo-inv2-atlas-005`.
+  6. **Lucas Moreau** — $1,750, 68 days overdue. Token: `demo-inv2-solstice-006`.
+  7. **Chloe Dupont** — $920, paid. Token: `demo-inv2-lumiere-007`.
+  8. **Tariq Al-Mansoor** — $2,400, 3-installment plan in progress. Token: `demo-inv2-oasis-008`.
+
+The old tokens `demo-inv2-sarah-001` and `demo-inv2-julian-003` are kept as aliases so existing links still resolve.
 
 ### Shared Team Credentials for Local Development
 Copy these into your local `.env.local` file:
@@ -121,14 +129,21 @@ Run these commands from the `pulsepay` folder:
 # Start local development server
 npm run dev
 
-# Run all 17 backend unit tests
+# Run all 37 backend unit tests
 npm test
 
 # Verify live Supabase database connectivity & demo data
 npm run test:api
 
-# Re-seed demo database with the 3 hackathon scenarios
+# Re-seed the demo with 8 real PayPal Sandbox invoices
 npm run seed
+
+# Run the real PayPal Sandbox verification suites
+npm run verify:phase1
+npm run verify:webhook
+npm run verify:sync
+npm run verify:block-c
+npm run verify:paylater
 
 # Run full production build verification (mandatory before submitting PR)
 npm run build
@@ -180,7 +195,7 @@ npm run build
 - `POST /api/invoices/:id/follow-up` now attaches the Resend email result; email failure never blocks the follow-up.
 
 ### Verification completed
-- `npm test`: 32/32 passing (policy guard, intent gate, scoring, portal normalization, approvals, email templates).
+- `npm test`: 37/37 passing (policy guard, intent gate, scoring, portal normalization, approvals, email templates).
 - `npx tsc --noEmit` and `npm run build`: clean.
 - Browser checks: new conversation, plan offers, accepted plan, pending owner review, dispute, paid invoice, invalid token, approvals counter, approvals reject; desktop, mobile, and dark mode.
 

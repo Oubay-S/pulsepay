@@ -12,6 +12,7 @@ interface OfferPanelProps {
   businessName: string;
   demoNow: string;
   paylater: ClientPortalPayLater | null;
+  hasPayable: boolean;
   onAccept: (id: string) => void;
   onCaptured: () => void;
   acceptingId: string | null;
@@ -25,6 +26,7 @@ export default function OfferPanel({
   businessName,
   demoNow,
   paylater,
+  hasPayable,
   onAccept,
   onCaptured,
   acceptingId,
@@ -52,6 +54,10 @@ export default function OfferPanel({
           <SparklesIcon width={18} height={18} />
           {invoice.status === 'SUPERSEDED' || invoice.status === 'PARTIALLY_PAID' ? (
             <p>A payment arrangement is active. The details are in your conversation.</p>
+          ) : hasPayable ? (
+            <p>
+              Your PayPal payment link is ready. Use the Pay button above to finish the payment.
+            </p>
           ) : (
             <p>
               No options yet. Reply to the assistant and we&apos;ll find a way forward within the

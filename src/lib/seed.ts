@@ -500,6 +500,16 @@ export async function resetAndSeedDatabase(): Promise<{
       }
     }
 
+    // Link seeded arrangements to their conversation so owner messages land in
+    // the client chat, not just on the offer card.
+    const { data: conversationRows } = await supabase
+      .from('conversations')
+      .select('id, token');
+
+    const conversationIdByToken = new Map(
+      (conversationRows ?? []).map((row) => [row.token, row.id])
+    );
+
     // 13. Staged installment plan for Tariq (Oasis Ventures).
     const tariqInvoice = insertedInvoices.find(
       (invoice) => invoice.paypal_invoice_id === tariq.paypalId
@@ -519,6 +529,7 @@ export async function resetAndSeedDatabase(): Promise<{
       .from('arrangements')
       .insert({
         invoice_id: tariqInvoice.id,
+        conversation_id: conversationIdByToken.get(tariq.spec.token) ?? null,
         type: 'PLAN',
         terms: {
           type: 'plan',
@@ -590,6 +601,7 @@ export async function resetAndSeedDatabase(): Promise<{
         .from('arrangements')
         .insert({
           invoice_id: julianInvoice.id,
+          conversation_id: conversationIdByToken.get('demo-inv2-alex-003') ?? null,
           type: 'DISCOUNT',
           terms: {
             requested_discount_pct: 35,

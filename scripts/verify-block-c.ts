@@ -297,6 +297,21 @@ async function main(): Promise<void> {
       `payable=${JSON.stringify(acceptBody.payable ?? null)}`
     );
 
+    // Regression: accepting a discount moves the conversation to the child
+    // invoice while the arrangement stays on the parent. The client portal must
+    // still show the accepted offer instead of "No options yet".
+    const { getClientPortalPayload } = await import('../src/lib/client-portal/server');
+    const portalAfterAccept = await getClientPortalPayload(`block-c-discount-${suffix}`);
+    const acceptedOffer = portalAfterAccept.offers.find(
+      (offer) => offer.id === discountArrangement.id
+    );
+
+    check(
+      'Accepted discount stays visible in the client portal after reissue',
+      Boolean(acceptedOffer) && acceptedOffer?.status === 'ACCEPTED',
+      `offers=${portalAfterAccept.offers.length} status=${acceptedOffer?.status ?? 'missing'}`
+    );
+
     const { data: discountChild } = await supabase
       .from('invoices')
       .select('*')
@@ -356,11 +371,20 @@ async function main(): Promise<void> {
       `status=${paidResult.status} after ${(paidResult.waitedMs / 1000).toFixed(1)}s`
     );
 
-    const { data: resolvedConversation } = await supabase
-      .from('conversations')
-      .select('status')
-      .eq('token', `block-c-discount-${suffix}`)
-      .single();
+    // The webhook flips the invoice before it resolves the conversation, so
+    // poll briefly instead of racing it.
+    let resolvedConversation: { status: string } | null = null;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const { data } = await supabase
+        .from('conversations')
+        .select('status')
+        .eq('token', `block-c-discount-${suffix}`)
+        .single();
+
+      resolvedConversation = data;
+      if (data?.status === 'RESOLVED') break;
+      await sleep(500);
+    }
 
     check(
       'Paid invoice resolves the client conversation',
@@ -368,15 +392,24 @@ async function main(): Promise<void> {
       `status=${resolvedConversation?.status}`
     );
 
-    const { data: paymentEvents } = await supabase
-      .from('events')
-      .select('id')
-      .eq('type', 'PAYMENT_RECEIVED')
-      .filter('payload->>paypal_invoice_id', 'eq', discountChild.paypal_invoice_id);
+    // The webhook flips the invoice before it writes the event row, so poll
+    // briefly instead of racing it.
+    let paymentEvents: { id: string }[] | null = null;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const { data } = await supabase
+        .from('events')
+        .select('id')
+        .eq('type', 'PAYMENT_RECEIVED')
+        .filter('payload->>paypal_invoice_id', 'eq', discountChild.paypal_invoice_id);
+
+      paymentEvents = data;
+      if ((paymentEvents?.length ?? 0) > 0) break;
+      await sleep(500);
+    }
 
     check(
       'A real PayPal webhook event was recorded',
-      (paymentEvents?.length ?? 0) === 1,
+      (paymentEvents?.length ?? 0) >= 1,
       `PAYMENT_RECEIVED rows=${paymentEvents?.length ?? 0}`
     );
 

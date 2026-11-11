@@ -28,6 +28,8 @@
 | **Elena Rostova**<br>VP Marketing | Aura Health Media | `INV2-ELENA-001` | **$850** | 7 days | `SENT` | **35** · 7 days overdue · $850 exposure · reliable client (90% on-time) |
 | **Chloe Dupont**<br>Creative Director | Lumière Studio Paris | `INV2-LUMIERE-007` | **$920** | Settled | `PAID` | **0** · Settled in full (feeds $920 to Recovered KPI) |
 
+> PayPal generates the real `INV2-…` IDs at seed time. The IDs above are demo labels; the stable identifier is each client's token. Run `POST /api/demo/reset` to reseed all 8 real Sandbox invoices.
+
 ---
 
 ## 2. The 3 Live Demo Scenarios (For the Video & Judges)
