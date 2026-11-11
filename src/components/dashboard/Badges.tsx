@@ -93,9 +93,9 @@ export function PriorityBadge({ score, reason }: PriorityBadgeProps) {
       </span>
 
       {reason && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-64 p-3 text-[11.5px] font-normal leading-relaxed rounded-xl shadow-lg bg-[var(--pp-surface)] border border-[var(--pp-line-strong)] text-[var(--pp-ink)] pointer-events-none transition-all">
-          <div className="font-semibold text-[10.5px] uppercase tracking-wider text-[var(--pp-accent)] mb-1">
-            Explainable AI Rationale
+        <div className="pp-tooltip absolute top-full right-0 mt-2 z-50 w-64 p-3 text-[11.5px] font-normal leading-relaxed rounded-[8px] bg-[var(--pp-surface)] border border-[var(--pp-line-strong)] text-[var(--pp-ink)] pointer-events-none">
+          <div className="font-semibold text-[11px] text-[var(--pp-primary)] mb-1">
+            Why this score
           </div>
           {reason}
         </div>

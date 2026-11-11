@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from 'react';
 import type { NegotiationProposal } from '@/types/proposals';
 import type { ApprovalsPayload } from '@/lib/approvals/types';
 import { isDispute } from '@/lib/approvals/normalize';
-import { formatDate, formatMoney } from '@/lib/client-portal/format';
+import { formatMoney } from '@/lib/client-portal/format';
 import ApprovalCard from './ApprovalCard';
 import {
   AlertIcon,
@@ -160,9 +160,6 @@ export default function ApprovalsQueue({ initial }: ApprovalsQueueProps) {
         </div>
 
         <div className="ap-topbar__right">
-          <span className="ap-demo-time">
-            Demo time <strong>{formatDate(demoNow)}</strong>
-          </span>
           <button
             type="button"
             className="ap-btn ap-btn--ghost ap-btn--sm"
@@ -178,10 +175,6 @@ export default function ApprovalsQueue({ initial }: ApprovalsQueueProps) {
       <main className="ap-main">
         <section className="ap-hero">
           <h1>Approvals &amp; disputes</h1>
-          <p className="ap-hero__sub">
-            Requests the assistant could not approve on its own. You stay in control of every
-            exception.
-          </p>
         </section>
 
         <section className="ap-summary" aria-label="Queue summary">
